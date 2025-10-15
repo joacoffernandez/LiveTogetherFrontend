@@ -19,14 +19,14 @@ function getTimeRemaining(dueDate: Date) {
   if (diffHours < 24) {
     if (diffHours < 1) {
       const minutes = Math.floor(diffMs / (1000 * 60))
-      return { text: `${minutes} MIN`, color: "green", isUrgent: true }
+      return { text: `${minutes} MIN`, color: "red", isUrgent: true }
     }
     const hours = Math.floor(diffHours)
-    return { text: `${hours} HRS`, color: "green", isUrgent: true }
+    return { text: `${hours} HORAS`, color: "red", isUrgent: true }
   } else {
     const days = Math.floor(diffDays)
-    if (days === 1) return { text: "1 DÍA", color: "blue", isUrgent: false }
-    return { text: `${days} DÍAS`, color: "purple", isUrgent: false }
+    if (days === 1) return { text: "1 DÍA", color: "yellow", isUrgent: false }
+    return { text: `${days} DÍAS`, color: "green", isUrgent: false }
   }
 }
 
@@ -98,7 +98,7 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br  relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-green-400/20 to-green-600/30 rounded-full blur-xl"></div>
         <div className="absolute top-1/4 -left-16 w-32 h-32 bg-gradient-to-br from-emerald-400/20 to-emerald-600/30 rounded-full blur-lg"></div>
@@ -154,7 +154,7 @@ export default function HomePage() {
                 return (
                   <Card
                     key={task.id}
-                    className={`${timeInfo.isUrgent ? "bg-gradient-to-r from-green-100 to-emerald-100 border-green-300 shadow-lg" : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"} shadow-sm relative`}
+                    className={`${timeInfo.isUrgent ? "bg-gradient-to-r" : "bg-gradient-to-r"} relative`}
                   >
                     {timeInfo.isUrgent && (
                       <div className="absolute -left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1">
@@ -169,35 +169,31 @@ export default function HomePage() {
                         ></div>
                       </div>
                     )}
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
+                    <CardContent className="px-3 py-1">
+                      <div className="flex gap-4 items-center">
+
                         <div
                           className={`w-16 h-16 ${
                             timeInfo.color === "green"
-                              ? "bg-gradient-to-br from-green-100 to-green-200 border-2 border-green-300 text-green-800"
-                              : timeInfo.color === "blue"
-                                ? "bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-300 text-blue-800"
-                                : timeInfo.color === "purple"
+                              ? "border-2 border-green-300 text-green-800"
+                              : timeInfo.color === "red"
+                                ? "bg-red border-2 border-red-300 text-red-800"
+                                : timeInfo.color === "yellow"
                                   ? "bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-300 text-purple-800"
                                   : "bg-gradient-to-br from-red-100 to-red-200 border-2 border-red-300 text-red-800"
                           } rounded-full flex flex-col items-center justify-center font-bold shadow-md flex-shrink-0`}
                         >
-                          {timeInfo.isUrgent ? (
-                            <>
-                              <Clock className="w-5 h-5 mb-1" />
-                              <span className="text-xs">{timeInfo.text}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-lg">{timeInfo.text.split(" ")[0]}</span>
-                              <span className="text-xs">{timeInfo.text.split(" ")[1] || ""}</span>
-                            </>
-                          )}
+
+                          <span className="text-xl">{timeInfo.text.split(" ")[0]}</span>
+                          <span className="text-xs">{timeInfo.text.split(" ")[1] || ""}</span>
+
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="text-xl font-bold text-gray-800 flex-1">{task.title}</h3>
-                            <div className="flex items-center gap-2 ml-4">
+
+                        <div className="flex-1 flex flex-col">
+                          <div className="flex items-start justify-between  flex-wrap">
+                            <h3 className="text-xl font-bold text-gray-800 line-clamp-1">{task.title}</h3>
+
+                            <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1">
                                 {Array.from({ length: 3 }, (_, i) => (
                                   <Star
@@ -213,149 +209,13 @@ export default function HomePage() {
                               <span className="text-sm font-bold text-green-600">{task.points} pts</span>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 mb-3">{task.description}</p>
-                          <div className="flex justify-center">
-                            <Button className="w-4/5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-md font-medium rounded-lg py-2 transition-all duration-200 hover:shadow-lg">
-                              <CheckSquare className="w-4 h-4 mr-2" />
-                              Marcar como completada
-                            </Button>
-                          </div>
+                          <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 )
               })}
-
-              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm relative overflow-hidden">
-                <div className="absolute -left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <div
-                    className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
-                    style={{ animationDelay: "0.5s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
-                    style={{ animationDelay: "1s" }}
-                  ></div>
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 border-2 border-red-300 rounded-full flex flex-col items-center justify-center text-red-800 font-bold shadow-md flex-shrink-0">
-                      <Clock className="w-5 h-5 mb-1" />
-                      <span className="text-xs">HOY</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-xl font-bold text-gray-800 flex-1">Lavar los platos</h3>
-                        <div className="flex items-center gap-2 ml-4">
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 fill-green-400 text-green-400" />
-                            <Star className="w-4 h-4 text-gray-300" />
-                            <Star className="w-4 h-4 text-gray-300" />
-                          </div>
-                          <span className="text-sm font-bold text-green-600">5 pts</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Lavar todos los platos del desayuno y almuerzo. Incluye secar y guardar en su lugar
-                        correspondiente.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-300 rounded-full flex flex-col items-center justify-center text-blue-800 font-bold shadow-md flex-shrink-0">
-                      <span className="text-lg">2</span>
-                      <span className="text-xs">DÍAS</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-xl font-bold text-gray-800 flex-1">Organizar el closet</h3>
-                        <div className="flex items-center gap-2 ml-4">
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 fill-orange-400 text-orange-400" />
-                            <Star className="w-4 h-4 fill-orange-400 text-orange-400" />
-                            <Star className="w-4 h-4 text-gray-300" />
-                          </div>
-                          <span className="text-sm font-bold text-green-600">15 pts</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Ordenar y doblar toda la ropa de invierno. Separar ropa que ya no se usa para donar.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-300 rounded-full flex flex-col items-center justify-center text-purple-800 font-bold shadow-md flex-shrink-0">
-                      <span className="text-lg">9</span>
-                      <span className="text-xs">DÍAS</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-xl font-bold text-gray-800 flex-1">Reparar la bicicleta</h3>
-                        <div className="flex items-center gap-2 ml-4">
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 fill-red-400 text-red-400" />
-                            <Star className="w-4 h-4 fill-red-400 text-red-400" />
-                            <Star className="w-4 h-4 fill-red-400 text-red-400" />
-                          </div>
-                          <span className="text-sm font-bold text-green-600">30 pts</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Cambiar la cadena y ajustar los frenos. Revisar las llantas y inflar si es necesario.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-green-100 to-emerald-200 border-green-300 shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-green-600/20 rounded-full -translate-y-10 translate-x-10"></div>
-                <div className="absolute bottom-0 left-0 w-16 h-16 bg-green-600/20 rounded-full translate-y-8 -translate-x-8"></div>
-                <CardContent className="p-4 relative">
-                  <div className="flex items-center justify-between text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-green-800 mb-1">3</div>
-                      <p className="text-green-700 text-sm font-medium">Tareas activas</p>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-green-800 mb-1">50</div>
-                      <p className="text-green-700 text-sm font-medium">Puntos posibles</p>
-                    </div>
-                    <div className="relative w-12 h-12">
-                      <svg className="w-12 h-12 progress-circle" viewBox="0 0 36 36">
-                        <path
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                          fill="none"
-                          stroke="rgba(34, 197, 94, 0.3)"
-                          strokeWidth="2"
-                        />
-                        <path
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                          fill="none"
-                          stroke="rgb(34, 197, 94)"
-                          strokeWidth="3"
-                          strokeDasharray="60, 100"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs font-bold text-green-800">60%</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </section>
 
