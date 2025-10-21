@@ -30,6 +30,7 @@ export default function LoginPage() {
     try {
       const response = await fetch('http://localhost:8080/user/signin', {
         method: 'POST',
+        credentials: 'include', // para recibir cookies 
         headers: {
           'Content-Type': 'application/json',
         },
@@ -40,12 +41,8 @@ export default function LoginPage() {
       console.log(data);
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
-        
-        // Redirigir al dashboard
         router.push('/');
       } else {
-        // Mostrar error
         setError(data.message || 'Error en el login');
       }
     } catch (err) {

@@ -13,7 +13,6 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "LiveTogether",
   description: "Gestión de tareas y notas familiares",
-  generator: "v0.dev",
 }
 
 export default function RootLayout({

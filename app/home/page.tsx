@@ -1,101 +1,67 @@
-"use client"
+"use client";
 
 import { Home, CheckSquare, FileText, User, Bell, Star, Users, Sparkles, Trophy, Clock, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
-function getTimeRemaining(dueDate: Date) {
-  const now = new Date()
-  const diffMs = dueDate.getTime() - now.getTime()
+import { api } from '@/lib/api';
 
-  if (diffMs <= 0) return { text: "VENCIDA", color: "red", isUrgent: false }
+function getTimeRemaining(isoDateString: string) {
+  const dueDate = new Date(isoDateString);
+  const now = new Date();
+  const diffMs = dueDate.getTime() - now.getTime();
 
-  const diffHours = diffMs / (1000 * 60 * 60)
-  const diffDays = diffMs / (1000 * 60 * 60 * 24)
+  if (diffMs <= 0) return { text: "VENCIDA", color: "red", isUrgent: false };
+
+  const diffHours = diffMs / (1000 * 60 * 60);
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
   if (diffHours < 24) {
     if (diffHours < 1) {
-      const minutes = Math.floor(diffMs / (1000 * 60))
-      return { text: `${minutes} MIN`, color: "red", isUrgent: true }
+      const minutes = Math.floor(diffMs / (1000 * 60));
+      return { text: `${minutes} MIN`, color: "red", isUrgent: true };
     }
-    const hours = Math.floor(diffHours)
-    return { text: `${hours} HORAS`, color: "red", isUrgent: true }
+    const hours = Math.floor(diffHours);
+    return { text: `${hours} HORAS`, color: "red", isUrgent: true };
   } else {
-    const days = Math.floor(diffDays)
-    if (days === 1) return { text: "1 DÍA", color: "yellow", isUrgent: false }
-    return { text: `${days} DÍAS`, color: "green", isUrgent: false }
+    const days = Math.floor(diffDays);
+    if (days === 1) return { text: "1 DÍA", color: "yellow", isUrgent: false };
+    return { text: `${days} DÍAS`, color: "green", isUrgent: false };
   }
 }
 
 export default function HomePage() {
   const [showFamilyMenu, setShowFamilyMenu] = useState(false)
+  const [families, setFamilies] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const families = [
-    {
-      id: 1,
-      name: "Familia González",
-      avatar: "/colorful-family-vector.jpg",
-      newTasks: 3,
-      newNotes: 2,
-      totalTasks: 12,
-      totalNotes: 5,
-      isActive: true,
-    },
-    {
-      id: 2,
-      name: "Familia Martínez",
-      avatar: "/animated-tasks-vector.jpg",
-      newTasks: 7,
-      newNotes: 1,
-      totalTasks: 15,
-      totalNotes: 3,
-      isActive: false,
-    },
-    {
-      id: 3,
-      name: "Familia López",
-      avatar: "/colorful-family-vector.jpg",
-      newTasks: 2,
-      newNotes: 4,
-      totalTasks: 8,
-      totalNotes: 7,
-      isActive: false,
-    },
-  ]
+  useEffect(() => {
+    async function loadData() {
+      const res = await api.get('/family/checkfamilies'); 
+      if (res.success) {
+        setFamilies(res.data.families || [])
+      };
+      setLoading(false);
 
-  const tasks = [
-    {
-        id: 1,
-        title: "Lavar los platos",
-        description:
-          "Lavar todos los platos del desayuno y almuerzo. Incluye secar y guardar en su lugar correspondiente.",
-        dueDate: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-        difficulty: "easy",
-        points: 5,
-        location: "Cocina",
-    },
-    {
-      id: 2,
-      title: "Organizar el closet",
-      description: "Ordenar y doblar toda la ropa de invierno. Separar ropa que ya no se usa para donar.",
-      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-      difficulty: "medium",
-      points: 15,
-      location: "Dormitorio",
-    },
-    {
-      id: 3,
-      title: "Reparar la bicicleta",
-      description: "Cambiar la cadena y ajustar los frenos. Revisar las llantas y inflar si es necesario.",
-      dueDate: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
-      difficulty: "hard",
-      points: 30,
-      location: "Garaje",
-    },
-  ]
+      let familyId:string = localStorage.getItem('activeFamilyId') || '';
+      const tasksRes = await api.get(`/task/assigned/uncompleted/${familyId}`);
+      console.log('Tasks Response:', tasksRes);
+      if (res.success) {
+        setTasks(tasksRes.data.tasks || [])
+      };
+    }
+    if (loading) {
+      loadData();
+    }
+    
+  }, []);
+
+
+  if (loading) return <p>Cargando...</p>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br  relative overflow-hidden">
@@ -143,13 +109,13 @@ export default function HomePage() {
             </div>
             <div className="space-y-3">
               {tasks.map((task) => {
-                const timeInfo = getTimeRemaining(task.dueDate)
+                const timeInfo = getTimeRemaining(task.deadline)
                 const difficultyConfig = {
-                  easy: { stars: 1, color: "green" },
-                  medium: { stars: 2, color: "orange" },
-                  hard: { stars: 3, color: "red" },
+                  "facil": { stars: 1, color: "green" },
+                  "medio": { stars: 2, color: "orange" },
+                  "dificil": { stars: 3, color: "red" },
                 }
-                const config = difficultyConfig[task.difficulty as keyof typeof difficultyConfig]
+                const config = difficultyConfig[task.difficulty.name as keyof typeof difficultyConfig]
 
                 return (
                   <Card
@@ -191,7 +157,7 @@ export default function HomePage() {
 
                         <div className="flex-1 flex flex-col">
                           <div className="flex items-start justify-between  flex-wrap">
-                            <h3 className="text-xl font-bold text-gray-800 line-clamp-1">{task.title}</h3>
+                            <h3 className="text-xl font-bold text-gray-800 line-clamp-1">{task.name}</h3>
 
                             <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1">
@@ -206,7 +172,7 @@ export default function HomePage() {
                                   />
                                 ))}
                               </div>
-                              <span className="text-sm font-bold text-green-600">{task.points} pts</span>
+                              <span className="text-sm font-bold text-green-600">{task.difficulty.points} pts</span>
                             </div>
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
@@ -306,7 +272,8 @@ export default function HomePage() {
       </main>
 
       {showFamilyMenu && (
-        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end">
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end flex-col">
+          <div className="w-full h-[20vh]" onClick={() => setShowFamilyMenu(false)}></div>
           <div className="w-full h-[80vh] bg-white rounded-t-3xl animate-in slide-in-from-bottom duration-300 ease-out">
             <div className="p-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-6">
@@ -339,7 +306,11 @@ export default function HomePage() {
                     className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
                       family.isActive ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
                     }`}
-                    onClick={() => setShowFamilyMenu(false)}
+                    onClick={
+                      () => {
+                        setShowFamilyMenu(false);
+                        localStorage.setItem('activeFamilyId', family.idFamily);
+                      }}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
@@ -352,32 +323,6 @@ export default function HomePage() {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-bold text-gray-800 mb-1">{family.name}</h4>
-                          <div className="flex items-center gap-4 text-xs text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <CheckSquare className="w-3 h-3" />
-                              <span>
-                                {family.newTasks} nuevas de {family.totalTasks}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              <span>
-                                {family.newNotes} nuevas de {family.totalNotes}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-2">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span>Progreso tareas</span>
-                              <span>{Math.round((family.newTasks / family.totalTasks) * 100)}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-1.5">
-                              <div
-                                className="bg-gradient-to-r from-green-500 to-emerald-600 h-1.5 rounded-full transition-all duration-300"
-                                style={{ width: `${(family.newTasks / family.totalTasks) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
                         </div>
                         {family.isActive && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
                       </div>
