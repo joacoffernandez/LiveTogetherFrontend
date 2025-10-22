@@ -8,6 +8,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 import { api } from '@/lib/api';
+import { Checkbox } from "@/components/ui/checkbox";
 
 function getTimeRemaining(isoDateString: string) {
   const dueDate = new Date(isoDateString);
@@ -38,6 +39,58 @@ export default function HomePage() {
   const [families, setFamilies] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [points, setPoints] = useState<number>(0);
+
+const toggleTaskCompletion = async (taskId: string) => {
+  try {
+    const res = await api.post(`/task/complete/user/${taskId}`);
+    console.log(res);
+    if (res.success) {
+
+      setTasks(prev =>
+        prev.map(t =>
+          t.id === taskId ? { ...t, completed: true } : t
+        )
+      );
+    }
+  } catch (err) {
+    console.error('Error al marcar tarea completada:', err);
+  }
+};
+
+useEffect(() => {
+  async function loadTasks() {
+    const familyId = localStorage.getItem('activeFamilyId');
+    if (!familyId) return;
+
+    const tasksRes = await api.get(`/task/assigned/uncompleted/${familyId}`);
+    if (tasksRes.success) {
+      setTasks(tasksRes.data.tasks || []);
+    }
+
+    const pointsRes = await api.get(`/user/meInFamily/${familyId}`);
+    if (pointsRes.success) {
+      console.log(pointsRes.data.familyUser.points);
+      setPoints(pointsRes.data.familyUser.points);
+    }
+  }
+
+  loadTasks();
+
+  // escuchar cambios en localStorage
+  const originalSetItem = localStorage.setItem;
+  localStorage.setItem = function (key, value) {
+    originalSetItem.apply(this, [key, value]);
+    if (key === 'activeFamilyId') {
+      loadTasks();
+    }
+  };
+
+  return () => {
+    localStorage.setItem = originalSetItem;
+  };
+}, []);
+
 
   useEffect(() => {
     async function loadData() {
@@ -46,13 +99,6 @@ export default function HomePage() {
         setFamilies(res.data.families || [])
       };
       setLoading(false);
-
-      let familyId:string = localStorage.getItem('activeFamilyId') || '';
-      const tasksRes = await api.get(`/task/assigned/uncompleted/${familyId}`);
-      console.log('Tasks Response:', tasksRes);
-      if (res.success) {
-        setTasks(tasksRes.data.tasks || [])
-      };
     }
     if (loading) {
       loadData();
@@ -111,11 +157,11 @@ export default function HomePage() {
               {tasks.map((task) => {
                 const timeInfo = getTimeRemaining(task.deadline)
                 const difficultyConfig = {
-                  "facil": { stars: 1, color: "green" },
-                  "medio": { stars: 2, color: "orange" },
-                  "dificil": { stars: 3, color: "red" },
+                  1: { stars: 1, color: "green" },
+                  2: { stars: 2, color: "orange" },
+                  3: { stars: 3, color: "red" },
                 }
-                const config = difficultyConfig[task.difficulty.name as keyof typeof difficultyConfig]
+                const config = difficultyConfig[task.idDifficulty as keyof typeof difficultyConfig]
 
                 return (
                   <Card
@@ -177,6 +223,13 @@ export default function HomePage() {
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
                         </div>
+
+                        <div className="">
+                          <Checkbox
+                            checked={task.completed}
+                            onCheckedChange={() => toggleTaskCompletion(task.idTask)}
+                          />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -204,7 +257,7 @@ export default function HomePage() {
                 <div className="absolute bottom-0 left-0 w-10 h-10 bg-white/20 rounded-full translate-y-5 -translate-x-5"></div>
                 <CardContent className="p-4 text-center relative">
                   <Star className="w-6 h-6 text-white mx-auto mb-2 drop-shadow-sm" />
-                  <div className="text-2xl font-bold text-white drop-shadow-sm">245</div>
+                  <div className="text-2xl font-bold text-white drop-shadow-sm">{points}</div>
                   <p className="text-xs text-emerald-100 font-medium">Aurapoints</p>
                 </CardContent>
               </Card>
