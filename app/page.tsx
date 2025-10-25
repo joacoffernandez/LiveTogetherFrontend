@@ -18,16 +18,6 @@ export default function LandingPage() {
         <p className="text-lg text-green-700">Organiza tu familia, simplifica tu vida</p>
       </div>
 
-      {/* Illustration/Image placeholder */}
-      <div className="mb-12 w-full max-w-md">
-        <div className="aspect-square bg-white/50 rounded-3xl shadow-lg flex items-center justify-center backdrop-blur-sm border border-green-200/50">
-          <svg className="w-48 h-48 text-green-600/30" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.86-.93-7-5.43-7-10V8.3l7-3.11 7 3.11V10c0 4.57-3.14 9.07-7 10z" />
-            <path d="M9 12l2 2 4-4" />
-          </svg>
-        </div>
-      </div>
-
       {/* Auth Section */}
       <div className="w-full max-w-md space-y-6">
         <p className="text-center text-green-800 text-lg font-medium">¿Tienes una cuenta?</p>
@@ -41,7 +31,7 @@ export default function LandingPage() {
           </Link>
 
           <Link
-            href="/signup"
+            href="/register"
             className="block w-full bg-white text-green-700 py-4 rounded-2xl font-semibold text-lg shadow-md hover:shadow-lg border-2 border-green-200 hover:border-green-300 transition-all duration-200 active:scale-[0.98] text-center"
           >
             Crear cuenta

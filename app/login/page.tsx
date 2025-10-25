@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUserContext } from '../../contexts/userContext';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  const { login } = useUserContext();
 
   // Manejar cambios en los inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,7 +41,7 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
-      console.log(data);
+      login(data.user.username, data.user.firstName); 
 
       if (response.ok) {
         router.push('/');
@@ -161,7 +164,7 @@ export default function LoginPage() {
 
         {/* Back to Landing */}
         <div className="text-center mt-6">
-          <a href="/landing" className="text-gray-600 hover:text-gray-800 text-sm">
+          <a href="/" className="text-gray-600 hover:text-gray-800 text-sm">
             ← Volver al inicio
           </a>
         </div>
