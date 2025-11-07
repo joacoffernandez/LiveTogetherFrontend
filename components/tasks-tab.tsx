@@ -66,7 +66,7 @@ export default function TasksTab({ onNavigateToCalendar, onNavigateToCreateTask 
   const { user } = useUserContext();
 
   useEffect(() => {
-      const storedFamilyId = localStorage.getItem("familyId")
+      const storedFamilyId = localStorage.getItem("idFamily")
       if (storedFamilyId) {
         setFamilyId(storedFamilyId)
       } else {
@@ -114,9 +114,10 @@ const handleTaskAction = async (taskId: number) => {
 
     // asignar tarea
     if (!task.assignedTo) {
+      if (!user?.username || !user?.firstName) return task;
       return {
         ...task,
-        assignedTo: { username: user.username, firstName: user.name },
+        assignedTo: { username: user.username, firstName: user.firstName },
       };
     }
 
@@ -181,7 +182,7 @@ const handleTaskAction = async (taskId: number) => {
     // type filter
     switch (activeFilter) {
       case "assigned":
-        return task.assignedTo?.username === user.username && !task.completedByUser // Current user's tasks
+        return task.assignedTo?.username === user?.username && !task.completedByUser // Current user's tasks
       case "unassigned":
         return !task.assignedTo
       case "review":
@@ -207,7 +208,7 @@ const handleTaskAction = async (taskId: number) => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Tareas</h2>
         <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-          {filteredTasks.filter((t) => t.assignedTo?.username === user.username && !t.completedByUser).length} pendientes
+          {filteredTasks.filter((t) => t.assignedTo?.username === user?.username && !t.completedByUser).length} pendientes
         </Badge>
       </div>
 

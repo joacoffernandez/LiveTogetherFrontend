@@ -4,6 +4,7 @@ import { Check, Mail } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
+import { useFamilyContext } from "@/contexts/familyContext"
 
 interface FamilySwitcherProps {
   isOpen: boolean
@@ -22,11 +23,9 @@ export default function FamilySwitcher({
   onNavigateToInvitations,
   newInvitationsCount,
 }: FamilySwitcherProps) {
+  const  { families, selectFamily, loading, reloadFamilies} = useFamilyContext()
 
-  const [families, setFamilies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+/*   useEffect(() => { // remplazar por family context 
     async function loadData() {
       const res = await api.get('/family/checkfamilies'); 
       if (res.success) {
@@ -38,13 +37,8 @@ export default function FamilySwitcher({
       loadData();
     }
     
-  }, []);
+  }, []); */
 
-/*   const families = [
-    { name: "Familia García", members: 4, color: "bg-emerald-500" },
-    { name: "Casa de la Playa", members: 6, color: "bg-blue-500" },
-    { name: "Piso Estudiantes", members: 3, color: "bg-purple-500" },
-  ] */
 
   if (!isOpen) return null
 
@@ -107,13 +101,12 @@ export default function FamilySwitcher({
             <Card
               key={family.name}
               className={`p-4 cursor-pointer transition-all border-2 ${
-                currentFamily === family.name
+                family.selected
                   ? "border-emerald-500 bg-emerald-50"
                   : "border-gray-200 hover:border-emerald-300"
               }`}
               onClick={() => {
-                onSelectFamily(family.name)
-                localStorage.setItem("familyId", family.idFamily)
+                selectFamily(family.idFamily)
                 onClose()
               }}
             >
@@ -127,7 +120,7 @@ export default function FamilySwitcher({
                   <h4 className="font-semibold">{family.name}</h4>
                   <p className="text-sm text-muted-foreground">{family.members} miembros</p>
                 </div>
-                {currentFamily === family.name && <Check className="w-5 h-5 text-emerald-600" />}
+                {family.selected && <Check className="w-5 h-5 text-emerald-600" />}
               </div>
             </Card>
           ))}

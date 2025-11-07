@@ -5,14 +5,19 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
+import { useFamilyContext } from "@/contexts/familyContext"
 
 export default function CalendarTab() {
   const now = new Date();
-  const [currentMonth, setCurrentMonth] = useState(now.getMonth())
-  const [currentYear, setCurrentYear] = useState(now.getFullYear())
-  const [selectedDay, setSelectedDay] = useState(now.getDate()+1)
+  const [selectedMonth, setCurrentMonth] = useState(now.getMonth())
+  const [selectedYear, setCurrentYear] = useState(now.getFullYear())
+  const [selectedDay, setSelectedDay] = useState(now.getDate())
 
-  const [familyId, setFamilyId] = useState<string | null>(null)
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  const currentDay = now.getDate()
+
+  const { family } = useFamilyContext()
   const [tasks, setTasks] = useState<Task[]>([]);
 
   const monthNames = [
@@ -46,9 +51,9 @@ export default function CalendarTab() {
   const loadTasks = async () => {
     try {
       const [assignedRes, unassignedRes, underReviewRes] = await Promise.all([
-        api.get(`/task/assigned/uncompleted/${familyId}`),
-        api.get(`/task/unassigned/${familyId}`),
-        api.get(`/task/underreview/${familyId}`),
+        api.get(`/task/assigned/uncompleted/${family?.idFamily}`),
+        api.get(`/task/unassigned/${family?.idFamily}`),
+        api.get(`/task/underreview/${family?.idFamily}`),
       ])
 
       console.log("Tareas pendientes:", assignedRes.data.tasks)
@@ -67,45 +72,36 @@ export default function CalendarTab() {
   }
 
   useEffect(() => {
-      const storedFamilyId = localStorage.getItem("familyId")
-      if (storedFamilyId) {
-        setFamilyId(storedFamilyId)
-      } else {
-        console.warn("No se encontró familyId en localStorage")
-      }
-    }, [])
-
-  useEffect(() => {
-    if (!familyId) return
+    if (!family?.idFamily) return
 
     loadTasks()
-  }, [familyId])
+  }, [family?.idFamily])
 
   const goToPreviousMonth = () => {
-    if (currentMonth === 0) {
+    if (selectedMonth === 0) {
       setCurrentMonth(11)
-      setCurrentYear(currentYear - 1)
+      setCurrentYear(selectedYear - 1)
     } else {
-      setCurrentMonth(currentMonth - 1)
+      setCurrentMonth(selectedMonth - 1)
     }
   }
 
   const goToNextMonth = () => {
-    if (currentMonth === 11) {
+    if (selectedMonth === 11) {
       setCurrentMonth(0)
-      setCurrentYear(currentYear + 1)
+      setCurrentYear(selectedYear + 1)
     } else {
-      setCurrentMonth(currentMonth + 1)
+      setCurrentMonth(selectedMonth + 1)
     }
   }
 
   // Calculate days in current month
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
-  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
+  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
+  const firstDayOfWeek = new Date(selectedYear, selectedMonth, 1).getDay()
   const days = ["D", "L", "M", "X", "J", "V", "S"]
 
   const getTasksForDay = (day: number) => {
-    const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`
+    const dateStr = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`
     return tasks.filter((task) => task.deadline.split("T")[0] === dateStr)
   }
 
@@ -119,7 +115,7 @@ export default function CalendarTab() {
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="text-sm font-medium min-w-[120px] text-center">
-            {monthNames[currentMonth]} {currentYear}
+            {monthNames[selectedMonth]} {selectedYear}
           </span>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextMonth}>
             <ChevronRight className="w-4 h-4" />
@@ -149,7 +145,7 @@ export default function CalendarTab() {
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1
             const dayTasks = getTasksForDay(day)
-            const isToday = day === 24 && currentMonth === 9 && currentYear === 2025
+            const isToday = day === currentDay && selectedMonth === currentMonth && selectedYear === currentYear
             const isSelected = day === selectedDay
 
             return (
@@ -187,7 +183,7 @@ export default function CalendarTab() {
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">
-          Tareas del {selectedDay} de {monthNames[currentMonth]}
+          Tareas del {selectedDay} de {monthNames[selectedMonth]}
         </h3>
         {getTasksForDay(selectedDay).length > 0 ? (
           getTasksForDay(selectedDay).map((task) => (

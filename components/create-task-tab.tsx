@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Card } from "@/components/ui/card"
@@ -9,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useFamilyContext } from "@/contexts/familyContext"
+import { api } from "@/lib/api"
 
 interface CreateTaskTabProps {
   onBack?: () => void
@@ -19,13 +20,81 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
   const [description, setDescription] = useState("")
   const [difficulty, setDifficulty] = useState("")
   const [dueDate, setDueDate] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { family } = useFamilyContext()
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would handle the task creation
-    console.log("[v0] Creating task:", { title, description, difficulty, dueDate })
-    // Navigate back after creation
-    onBack?.()
+    setError("")
+    setIsSubmitting(true)
+
+    try {
+      // Validaciones básicas
+      if (!family?.idFamily) {
+        setError("No hay una familia seleccionada")
+        return
+      }
+
+      if (!title.trim() || !description.trim() || !difficulty || !dueDate) {
+        setError("Todos los campos son requeridos")
+        return
+      }
+
+      // Mapear dificultad de string a número según tu enum del backend
+      const difficultyMap: { [key: string]: number } = {
+        "facil": 1,
+        "medio": 2, 
+        "dificil": 3
+      }
+
+      const difficultyNumber = difficultyMap[difficulty]
+
+      if (!difficultyNumber) {
+        setError("Dificultad no válida")
+        return
+      }
+
+      // Preparar datos para la API
+      const taskData = {
+        name: title.trim(),
+        description: description.trim(),
+        familyId: family.idFamily,
+        difficulty: difficultyNumber,
+        deadline: new Date(dueDate).toISOString() // Convertir a formato ISO
+      }
+
+      console.log("Enviando tarea:", taskData)
+
+      // 🔹 Hacer la petición POST usando tu API
+      const result = await api.post('/task/create', taskData)
+
+      if (result.success) {
+        console.log("✅ Tarea creada exitosamente:", result.data)
+        // Limpiar formulario
+        setTitle("")
+        setDescription("")
+        setDifficulty("")
+        setDueDate("")
+        
+        // Navegar de vuelta
+        if (onBack) {
+          onBack()
+        } else {
+          setError("Tarea creada exitosamente") // Por si no hay onBack
+        }
+      } else {
+        setError(result.error || "Error al crear la tarea")
+        console.error("❌ Error en la respuesta:", result)
+      }
+
+    } catch (err) {
+      setError("Error de conexión con el servidor")
+      console.error("❌ Error al crear tarea:", err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const getDifficultyPoints = (diff: string) => {
@@ -41,6 +110,12 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
     }
   }
 
+  // Validar que la fecha no sea en el pasado
+  const getMinDate = () => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
+
   return (
     <div className="p-6 space-y-6 pb-24">
       {/* Header */}
@@ -50,6 +125,17 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
         </Button>
         <h2 className="text-2xl font-bold">Crear Tarea</h2>
       </div>
+
+      {/* Mensaje de error */}
+      {error && (
+        <div className={`p-4 rounded-lg ${
+          error.includes("éxito") 
+            ? "bg-green-100 text-green-700 border border-green-200" 
+            : "bg-red-100 text-red-700 border border-red-200"
+        }`}>
+          {error}
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -62,6 +148,7 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
               placeholder="Ej: Lavar los platos"
               className="mt-1 border-emerald-200"
               required
+              disabled={isSubmitting}
             />
           </label>
         </Card>
@@ -75,6 +162,7 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
               placeholder="Describe la tarea..."
               className="mt-1 border-emerald-200 min-h-[100px]"
               required
+              disabled={isSubmitting}
             />
           </label>
         </Card>
@@ -82,7 +170,7 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
         <Card className="p-4 bg-white border-emerald-100">
           <label className="block mb-2">
             <span className="text-sm font-semibold text-foreground">Dificultad</span>
-            <Select value={difficulty} onValueChange={setDifficulty} required>
+            <Select value={difficulty} onValueChange={setDifficulty} required disabled={isSubmitting}>
               <SelectTrigger className="mt-1 border-emerald-200">
                 <SelectValue placeholder="Selecciona la dificultad" />
               </SelectTrigger>
@@ -127,14 +215,36 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
               onChange={(e) => setDueDate(e.target.value)}
               className="mt-1 border-emerald-200"
               required
+              min={getMinDate()}
+              disabled={isSubmitting}
             />
           </label>
+          <p className="text-xs text-gray-500 mt-1">
+            La fecha no puede ser anterior a hoy
+          </p>
         </Card>
 
-        <Button type="submit" className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-          Crear Tarea
+        <Button 
+          type="submit" 
+          className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Creando tarea...
+            </div>
+          ) : (
+            "Crear Tarea"
+          )}
         </Button>
       </form>
+
+      {/* Información de depuración (opcional) */}
+      <div className="text-xs text-gray-500 p-4 bg-gray-50 rounded-lg">
+        <p>Familia seleccionada: {family?.name || "Ninguna"}</p>
+        <p>ID Familia: {family?.idFamily || "No disponible"}</p>
+      </div>
     </div>
   )
 }

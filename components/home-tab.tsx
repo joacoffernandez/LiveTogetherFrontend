@@ -12,14 +12,26 @@ export default function HomeTab() {
   const completedToday = 3
   const weekStreak = 7
 
-  const { user } = useUserContext();
+  const { user, loading } = useUserContext();
+
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6 pb-24 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 pb-24">
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground mb-1">¡Hola, {user.name}!</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-1">¡Hola, {user?.firstName}!</h2>
           <p className="text-muted-foreground">Así va tu día</p>
         </div>
         <svg
