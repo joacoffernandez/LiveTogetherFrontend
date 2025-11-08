@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFamilyContext } from "@/contexts/familyContext";
 
-export default function Header() {
+export default function PageHeader() {
   const { family } = useFamilyContext()
   const newNotificationsCount = 5; // Esto podría venir de un contexto
 

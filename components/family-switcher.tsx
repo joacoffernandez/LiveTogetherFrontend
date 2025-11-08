@@ -5,25 +5,25 @@ import { Card } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import { useFamilyContext } from "@/contexts/familyContext"
+import { useRouter } from "next/navigation"
 
 interface FamilySwitcherProps {
   isOpen: boolean
   onClose: () => void
-  currentFamily: string
-  onSelectFamily: (family: string) => void
-  onNavigateToInvitations: () => void
   newInvitationsCount: number
 }
 
 export default function FamilySwitcher({
   isOpen,
   onClose,
-  currentFamily,
-  onSelectFamily,
-  onNavigateToInvitations,
   newInvitationsCount,
 }: FamilySwitcherProps) {
   const  { families, selectFamily, loading, reloadFamilies} = useFamilyContext()
+  const router = useRouter()
+  
+  const onNavigateToInvitations = () => {
+    router.push('/invitations')
+  }
 
 /*   useEffect(() => { // remplazar por family context 
     async function loadData() {
