@@ -2,10 +2,9 @@
 
 import { Check, Mail } from "lucide-react"
 import { Card } from "@/components/ui/card"
-import { useEffect, useState } from "react"
-import { api } from "@/lib/api"
 import { useFamilyContext } from "@/contexts/familyContext"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 interface FamilySwitcherProps {
   isOpen: boolean
@@ -18,43 +17,74 @@ export default function FamilySwitcher({
   onClose,
   newInvitationsCount,
 }: FamilySwitcherProps) {
-  const  { families, selectFamily, loading, reloadFamilies} = useFamilyContext()
+  const { families, selectFamily, loading, reloadFamilies, familyMembers } = useFamilyContext()
   const router = useRouter()
-  
+  const [isVisible, setIsVisible] = useState(false)
+  const [shouldRender, setShouldRender] = useState(false)
+
   const onNavigateToInvitations = () => {
     router.push('/invitations')
+    onClose()
   }
 
-/*   useEffect(() => { // remplazar por family context 
-    async function loadData() {
-      const res = await api.get('/family/checkfamilies'); 
-      if (res.success) {
-        setFamilies(res.data.families || [])
-      };
-      setLoading(false);
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true)
+      setTimeout(() => setIsVisible(true), 10)
+      document.body.style.overflow = 'hidden' // desactivar scroll
+    } else {
+      setIsVisible(false)
+      setTimeout(() => setShouldRender(false), 300) // tiempo para que complete la animacion antes de desaparecer 
+      document.body.style.overflow = 'unset'
     }
-    if (loading) {
-      loadData();
+
+    return () => {
+      document.body.style.overflow = 'unset'
     }
-    
-  }, []); */
+  }, [isOpen])
 
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (isOpen) {
+        e.preventDefault()
+      }
+    }
 
-  if (!isOpen) return null
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isOpen) {
+        e.preventDefault()
+      }
+    }
 
-  if (loading) return (    <div className="absolute inset-0 bg-black/50 z-50 flex items-end" onClick={onClose}>
+    if (isOpen) {
+      document.addEventListener('wheel', handleWheel, { passive: false })
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+    }
+
+    return () => {
+      document.removeEventListener('wheel', handleWheel)
+      document.removeEventListener('touchmove', handleTouchMove)
+    }
+  }, [isOpen])
+
+  if (!shouldRender) return null
+
+  if (loading) return (
+    <div 
+      className="fixed inset-0 bg-black/50 z-50 flex items-end"
+      onClick={onClose}
+    >
       <div
-        className="w-full bg-white rounded-t-3xl p-6 animate-in slide-in-from-bottom duration-300"
+        className={`w-full bg-white rounded-t-3xl p-6 transition-transform duration-300 ${
+          isVisible ? 'translate-y-0' : 'translate-y-full'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-lg">Cambiar de familia</h3>
           <button
-            onClick={() => {
-              onNavigateToInvitations()
-              onClose()
-            }}
+            onClick={onNavigateToInvitations}
             className="p-2 hover:bg-emerald-50 rounded-full transition-colors relative"
           >
             <Mail className="w-5 h-5 text-emerald-600" />
@@ -73,19 +103,23 @@ export default function FamilySwitcher({
   )
 
   return (
-    <div className="absolute inset-0 bg-black/50 z-50 flex items-end" onClick={onClose}>
+    <div 
+      className={`fixed inset-0 bg-black/50 z-50 flex items-end transition-opacity duration-300 ${
+        isVisible ? 'opacity-100' : 'opacity-0'
+      }`}
+      onClick={onClose}
+    >
       <div
-        className="w-full bg-white rounded-t-3xl p-6 animate-in slide-in-from-bottom duration-300"
+        className={`w-full bg-white rounded-t-3xl p-6 transition-transform duration-300 ${
+          isVisible ? 'translate-y-0' : 'translate-y-full'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-lg">Cambiar de familia</h3>
           <button
-            onClick={() => {
-              onNavigateToInvitations()
-              onClose()
-            }}
+            onClick={onNavigateToInvitations}
             className="p-2 hover:bg-emerald-50 rounded-full transition-colors relative"
           >
             <Mail className="w-5 h-5 text-emerald-600" />
@@ -96,7 +130,7 @@ export default function FamilySwitcher({
             )}
           </button>
         </div>
-        <div className="space-y-3 mb-6">
+        <div className="space-y-3 mb-6 max-h-[60vh] overflow-y-auto">
           {families.map((family) => (
             <Card
               key={family.name}
@@ -112,7 +146,7 @@ export default function FamilySwitcher({
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-12 h-12 ${family.color} rounded-full flex items-center justify-center text-white font-bold`}
+                  className={`w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold`}
                 >
                   {family.name.charAt(0)}
                 </div>

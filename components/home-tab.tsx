@@ -3,6 +3,7 @@
 import { Trophy, CheckCircle2, Users, Target, Zap } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import LoadingScreen from "./loading"
 
 import { useUserContext } from '../contexts/userContext';
 
@@ -15,16 +16,7 @@ export default function HomeTab() {
   const { user, loading } = useUserContext();
 
 
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6 pb-24 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen></LoadingScreen>
 
   return (
     <div className="p-6 space-y-6 pb-24">

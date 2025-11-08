@@ -100,11 +100,11 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
   const getDifficultyPoints = (diff: string) => {
     switch (diff) {
       case "facil":
-        return 5
-      case "medio":
         return 10
+      case "medio":
+        return 20
       case "dificil":
-        return 15
+        return 30
       default:
         return 0
     }
@@ -178,19 +178,19 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
                 <SelectItem value="facil">
                   <div className="flex items-center justify-between w-full">
                     <span>Fácil</span>
-                    <span className="ml-4 text-emerald-600 font-semibold">5 pts</span>
+                    <span className="ml-4 text-emerald-600 font-semibold">10 pts</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="medio">
                   <div className="flex items-center justify-between w-full">
                     <span>Medio</span>
-                    <span className="ml-4 text-emerald-600 font-semibold">10 pts</span>
+                    <span className="ml-4 text-emerald-600 font-semibold">20 pts</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="dificil">
                   <div className="flex items-center justify-between w-full">
                     <span>Difícil</span>
-                    <span className="ml-4 text-emerald-600 font-semibold">15 pts</span>
+                    <span className="ml-4 text-emerald-600 font-semibold">30 pts</span>
                   </div>
                 </SelectItem>
               </SelectContent>

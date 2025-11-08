@@ -3,11 +3,29 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { api } from "@/lib/api"
 import { useFamilyContext } from "@/contexts/familyContext"
 
-export default function CalendarTab() {
+interface Task {
+  idTask: number
+  name: string
+  creator: { username: string, firstName: string }
+  assignedTo: { username: string, firstName: string } | null
+  timeValue: number
+  timeUnit: string
+  difficulty: { name: string, points: number}
+  deadline: string
+  completedByUser: boolean;
+  completedByAdmin: boolean;
+}
+
+interface TaskHook {
+  tasks?: Task[]; // ← Recibir tasks por props
+  reloadTasks?: () => void;
+}
+
+export default function CalendarTab( {tasks: hookTasks, reloadTasks} : TaskHook) {
   const now = new Date();
   const [selectedMonth, setCurrentMonth] = useState(now.getMonth())
   const [selectedYear, setCurrentYear] = useState(now.getFullYear())
@@ -18,7 +36,7 @@ export default function CalendarTab() {
   const currentDay = now.getDate()
 
   const { family } = useFamilyContext()
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks] = useState<Task[]>(hookTasks || []);
 
   const monthNames = [
     "Enero",
@@ -34,48 +52,6 @@ export default function CalendarTab() {
     "Noviembre",
     "Diciembre",
   ]
-
-  interface Task {
-    idTask: number
-    name: string
-    creator: { username: string, firstName: string }
-    assignedTo: { username: string, firstName: string } | null
-    timeValue: number
-    timeUnit: string
-    difficulty: { name: string, points: number}
-    deadline: string
-    completedByUser: boolean;
-    completedByAdmin: boolean;
-  }
-
-  const loadTasks = async () => {
-    try {
-      const [assignedRes, unassignedRes, underReviewRes] = await Promise.all([
-        api.get(`/task/assigned/uncompleted/${family?.idFamily}`),
-        api.get(`/task/unassigned/${family?.idFamily}`),
-        api.get(`/task/underreview/${family?.idFamily}`),
-      ])
-
-      console.log("Tareas pendientes:", assignedRes.data.tasks)
-      console.log("Tareas no asignadas:", unassignedRes.data.tasks)
-      console.log("Tareas underreview:", underReviewRes.data.tasks)
-
-      setTasks([
-        ...assignedRes.data.tasks,
-        ...unassignedRes.data.tasks,
-        ...underReviewRes.data.tasks,
-      ])
-
-    } catch (err) {
-      console.error("Error cargando tareas:", err)
-    }
-  }
-
-  useEffect(() => {
-    if (!family?.idFamily) return
-
-    loadTasks()
-  }, [family?.idFamily])
 
   const goToPreviousMonth = () => {
     if (selectedMonth === 0) {
@@ -156,7 +132,7 @@ export default function CalendarTab() {
                   isToday
                     ? "bg-emerald-600 text-white border-emerald-600 font-bold"
                     : isSelected
-                      ? "bg-emerald-100 border-emerald-400"
+                      ? "bg-emerald-200 border-emerald-400"
                       : dayTasks.length > 0
                         ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
                         : "border-gray-200 hover:bg-gray-50"
@@ -198,7 +174,15 @@ export default function CalendarTab() {
                   <h4 className={`font-semibold text-sm ${task.completedByUser ? "line-through text-muted-foreground" : ""}`}>
                     {task.name}
                   </h4>
-                  <p className="text-xs text-muted-foreground">Por {task.creator.firstName}</p>
+                  <div className="flex gap-2">
+                    <p className="text-xs text-muted-foreground">de <span className="text-emerald-500 font-medium">{task.creator.firstName}</span></p>
+                      {task.assignedTo && (
+                        <>
+                          <p className="text-xs text-muted-foreground">•</p>
+                          <p className="text-xs text-muted-foreground">para <span className="text-emerald-500 font-medium">{task.assignedTo.firstName}</span></p>
+                        </>
+                      )}
+                    </div>
                 </div>
                 <span className="text-xs font-semibold text-emerald-600">{task.difficulty.points} pts</span>
               </div>

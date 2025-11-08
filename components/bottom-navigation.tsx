@@ -11,7 +11,6 @@ export default function BottomNavigation() {
   const newInvitationsCount = 1;
 
   const isActive = (path: string) => {
-    console.log("ESTE ES EL PATH ", pathname, " ==== ", path)
     return (pathname === path) || (pathname.startsWith(path));
   };
 
