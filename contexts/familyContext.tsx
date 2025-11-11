@@ -29,6 +29,7 @@ interface FamilyContextType {
   families: FamilyData[];
   familyMembers: FamilyMember[]; // ← NUEVO: miembros de la familia
   isAdmin: boolean;
+  familyUser: FamilyMember | null;
   loading: boolean;
   membersLoading: boolean; // ← NUEVO: loading específico para miembros
   selectFamily: (familyId: string) => void;
@@ -41,6 +42,7 @@ const FamilyContext = createContext<FamilyContextType>({
   families: [],
   familyMembers: [],
   isAdmin: false,
+  familyUser: null, 
   loading: true,
   membersLoading: false,
   selectFamily: () => {},
@@ -166,7 +168,6 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
       await loadFamilyMembers(idFamily);
 
       console.log("🏠 Familia seleccionada:", selectedFamily.name);
-      console.log(selectedFamily)
     }
   };
 
@@ -189,6 +190,8 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
 
   const isAdmin = family?.role === "Admin";
 
+  const familyUser = familyMembers.find((member) => member.idUser == user?.idUser) || null;
+
   return (
     <FamilyContext.Provider
       value={{
@@ -196,6 +199,7 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
         families,
         familyMembers, 
         isAdmin,
+        familyUser,
         loading,
         membersLoading, 
         selectFamily,

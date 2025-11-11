@@ -55,8 +55,8 @@ function getTimeRemaining(isoDateString: string): TimeInfo {
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
-  if (diffHours < 24) {
-    if (diffHours < 1) {
+  if (Math.abs(diffHours) < 24) {
+    if (Math.abs(diffHours) < 1) {
       const minutes = Math.floor(diffMs / (1000 * 60));
       return { number: minutes, text: `MIN`, urgent: true };
     }
@@ -128,11 +128,11 @@ const handleTaskAction = async (taskId: number) => {
     setTasks(previousTasks); // revertir cambios en caso de error
   } finally {
 
-    if (reloadTasks) {
+/*     if (reloadTasks) {
       await reloadTasks();
     } else {
       console.error("ERROR CON LAS TAREAS ")
-    }
+    } */
   }
 };
 
@@ -153,11 +153,11 @@ const handleTaskAction = async (taskId: number) => {
       console.error("Error aprobando tarea:", err);
       setTasks(previousTasks); // revertir
     } finally {
-      if (reloadTasks) {
+/*       if (reloadTasks) {
         await reloadTasks();
       } else {
         console.error("ERROR CON LAS TAREAS ")
-      }
+      } */
     }
   };
 

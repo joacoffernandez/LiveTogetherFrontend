@@ -6,7 +6,7 @@ import { useFamilyContext } from "@/contexts/familyContext";
 
 export default function PageHeader() {
   const { family } = useFamilyContext()
-  const newNotificationsCount = 5; // Esto podría venir de un contexto
+  const newNotificationsCount = 1; // Esto podría venir de un contexto
 
   return (
     <div className="px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-emerald-100 flex items-center justify-between">

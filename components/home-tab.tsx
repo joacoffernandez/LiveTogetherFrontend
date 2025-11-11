@@ -1,22 +1,66 @@
 "use client"
 
-import { Trophy, CheckCircle2, Users, Target, Zap } from "lucide-react"
+import { Trophy, CheckCircle2, Users, Target, Zap, Plus, FileText } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import LoadingScreen from "./loading"
 
 import { useUserContext } from '../contexts/userContext';
+import { useFamilyContext } from '@/contexts/familyContext';
+import { useEffect, useState } from "react"
+import { api } from "@/lib/api"
+import { Button } from "./ui/button"
+import { useRouter } from "next/navigation"
+
+interface DailyProgress {
+  completedTasks: number;
+  totalTasks: number;
+}
 
 export default function HomeTab() {
-  const pendingTasks = 5
-  const totalPoints = 247
-  const completedToday = 3
   const weekStreak = 7
+  const router = useRouter()
 
-  const { user, loading } = useUserContext();
+  const { user, loading: userLoading } = useUserContext();
+  const { family, familyUser, loading } = useFamilyContext();
+  
+  const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
+  const [progressLoading, setProgressLoading] = useState(false);
+
+  // Fetch del progreso diario
+  const fetchDailyProgress = async () => {
+    if (!family?.idFamily) return;
+    
+    try {
+      setProgressLoading(true);
+      const res = await api.get(`/task/familydailyprogress/${family.idFamily}`);
+      
+      if (res.success && res.data.progress) {
+        setDailyProgress(res.data.progress);
+      }
+    } catch (err) {
+      console.error("Error cargando progreso diario:", err);
+    } finally {
+      setProgressLoading(false);
+    }
+  };
+
+  const onNavigateToCreateTask = () => {
+    router.push('/tasks/create');
+  };
+
+  useEffect(() => {
+    if (family?.idFamily) {
+      fetchDailyProgress();
+    }
+  }, [family?.idFamily]);
+
+  const progressPercentage = dailyProgress && dailyProgress.totalTasks > 0 
+    ? Math.round((dailyProgress.completedTasks / dailyProgress.totalTasks) * 100)
+    : 0;
 
 
-  if (loading) return <LoadingScreen></LoadingScreen>
+  if ( userLoading || progressLoading || loading ) return <LoadingScreen></LoadingScreen>
 
   return (
     <div className="p-6 space-y-6 pb-24">
@@ -24,7 +68,7 @@ export default function HomeTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-1">¡Hola, {user?.firstName}!</h2>
-          <p className="text-muted-foreground">Así va tu día</p>
+          <p className="text-muted-foreground">Este es el resumen de <span className="font-bold text-emerald-500">{family?.name}</span></p>
         </div>
         <svg
           width="80"
@@ -67,43 +111,43 @@ export default function HomeTab() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="p-4 bg-white border-emerald-100 shadow-sm">
+        <Card className="p-4 bg-white border-2 border-emerald-100 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
               <Target className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{pendingTasks}</p>
+              <p className="text-2xl font-bold text-foreground">{dailyProgress && (dailyProgress.totalTasks - dailyProgress.completedTasks)}</p>
               <p className="text-xs text-muted-foreground">Pendientes</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4 bg-white border-emerald-100 shadow-sm">
+        <Card className="p-4 bg-white border-2 border-emerald-100 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
               <Trophy className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{totalPoints}</p>
+              <p className="text-2xl font-bold text-foreground">{familyUser?.points || 0}</p>
               <p className="text-xs text-muted-foreground">Puntos</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4 bg-white border-emerald-100 shadow-sm">
+        <Card className="p-4 bg-white border-2 border-emerald-100 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{completedToday}</p>
-              <p className="text-xs text-muted-foreground">Hoy</p>
+              <p className="text-2xl font-bold text-foreground">{dailyProgress?.completedTasks}</p>
+              <p className="text-xs text-muted-foreground">Tareas hechas</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4 bg-white border-emerald-100 shadow-sm">
+        <Card className="p-4 bg-white border-2 border-emerald-100 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
               <Zap className="w-5 h-5 text-amber-600" />
@@ -118,23 +162,52 @@ export default function HomeTab() {
 
       {/* Family Status */}
       <Card className="p-5 bg-gradient-to-br from-emerald-500 to-emerald-600 border-0 shadow-md">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-1">
           <div>
-            <h3 className="text-white font-bold text-lg mb-1">Estado Familiar</h3>
-            <p className="text-emerald-100 text-sm">Todos activos hoy</p>
+            <h3 className="text-white font-bold text-lg">Estado Familiar</h3>
+            <p className="text-emerald-100 text-sm">
+              {progressLoading 
+                ? "Cargando progreso..." 
+                : dailyProgress 
+                  ? `${dailyProgress.completedTasks} de ${dailyProgress.totalTasks} tareas completadas`
+                  : "Todos activos hoy"
+              }
+            </p>
           </div>
           <Users className="w-6 h-6 text-white" />
         </div>
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-emerald-100">Progreso del día</span>
-            <span className="text-white font-semibold">75%</span>
+          <div className="flex justify-between items-end text-sm">
+            <span className="text-emerald-100 font-semibold">Progreso del día</span>
+            <span className="text-white font-bold text-2xl">
+              {progressLoading ? "..." : `${progressPercentage}%`}
+            </span>
           </div>
-          <Progress value={75} className="h-2 bg-emerald-400" />
+          <Progress 
+            value={progressLoading ? 0 : progressPercentage} 
+            className="h-2 bg-emerald-400" 
+          />
         </div>
       </Card>
 
-      {/* Today's Tasks */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          onClick={onNavigateToCreateTask}
+          className="h-12 p-4 bg-white hover:bg-white border-2 hover:cursor-pointer border-emerald-200 shadow-md text-white font-semibold text-black"
+        >
+          <Plus className="w-5 h-5 mr-2 text-emerald-700 font-bold" />
+          Crear Tarea
+        </Button>
+        <Button
+          /* onClick={onNavigateToCreateNote} */
+          className="h-12 p-4 bg-white hover:bg-white border-2 border-emerald-200 shadow-md text-white font-semibold text-black"
+        >
+          <FileText className="w-5 h-5 mr-2 text-emerald-700 font-bold" />
+          Crear Nota
+        </Button>
+      </div>
+
+
       <div>
         <h3 className="font-bold text-lg mb-3">Tus tareas de hoy</h3>
         <div className="space-y-3">

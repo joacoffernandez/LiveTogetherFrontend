@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 interface User {
-  id: string;
+  idUser: string;
   username: string;
   firstName: string;
   lastName: string;
@@ -31,6 +31,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
+      setLoading(true);
         try {
           const response = await api.get('/user/me');
           if (response.success) {
