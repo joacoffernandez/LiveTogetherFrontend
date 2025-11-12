@@ -34,8 +34,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next\\dev/types/**/*.ts",
-    ".next\\dev/types/**/*.ts"
-, "contexts/userContext.tsx"  ],
+    ".next\\dev/types/**/*.ts",
+    "contexts/userContext.tsx"
+  ],
   "exclude": [
     "node_modules"
   ]

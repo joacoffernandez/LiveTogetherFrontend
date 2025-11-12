@@ -16,6 +16,7 @@ export default function BottomNavigation() {
 
   return (
     <>
+    <div className="h-20"></div>
       <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t border-emerald-100 px-4 py-3 pb-6 z-40">
         <div className="flex items-center justify-around">
           <Link

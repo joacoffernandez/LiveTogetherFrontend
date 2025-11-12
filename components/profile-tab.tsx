@@ -1,22 +1,60 @@
-import { Trophy, Star, Award, TrendingUp } from "lucide-react"
+import { useState } from 'react'
+import { Trophy, Star, Award, TrendingUp, LogOut } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { useUserContext } from "@/contexts/userContext"
+import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 
 export default function ProfileTab() {
+  const { user, loading, logout } = useUserContext()
+  const router = useRouter()
+  const [loggingOut, setLoggingOut] = useState(false)
+
   const achievements = [
     { icon: Star, label: "Colaborador del mes", color: "text-yellow-600 bg-yellow-100" },
     { icon: Award, label: "50 tareas completadas", color: "text-purple-600 bg-purple-100" },
     { icon: TrendingUp, label: "Racha de 7 días", color: "text-emerald-600 bg-emerald-100" },
   ]
 
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true)
+      
+      const result = await api.get('/user/signout')
+      
+      if (result.success) {
+        logout()
+        router.push('/login')
+      } else {
+        console.error('Error en logout:', result)
+      }
+    } catch (error) {
+      console.error('Error durante logout:', error)
+    } finally {
+      setLoggingOut(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Profile Header */}
       <div className="flex flex-col items-center text-center">
         <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-3 shadow-lg">
-          M
+          {user?.firstName?.[0] || 'U'}
         </div>
-        <h2 className="text-2xl font-bold">María García</h2>
+        <h2 className="text-2xl font-bold">{user?.firstName} {user?.lastName}</h2>
+        <p className="text-muted-foreground text-sm">@{user?.username}</p>
         <p className="text-muted-foreground text-sm">Miembro desde enero 2025</p>
       </div>
 
@@ -77,14 +115,14 @@ export default function ProfileTab() {
         <div className="space-y-2">
           {[
             { name: "Pedro", tasks: 58, position: 1 },
-            { name: "María", tasks: 52, position: 2 },
+            { name: user?.firstName || "Tú", tasks: 52, position: 2 },
             { name: "Laura", tasks: 45, position: 3 },
             { name: "Carlos", tasks: 38, position: 4 },
           ].map((member) => (
             <div
               key={member.name}
               className={`flex items-center justify-between p-2 rounded-lg ${
-                member.name === "María" ? "bg-white shadow-sm" : ""
+                member.name === user?.firstName ? "bg-white shadow-sm" : ""
               }`}
             >
               <div className="flex items-center gap-2">
@@ -96,6 +134,16 @@ export default function ProfileTab() {
           ))}
         </div>
       </Card>
+
+      {/* Logout Button */}
+      <button 
+        className="w-full py-3 opacity-80 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={handleLogout}
+        disabled={loggingOut}
+      >
+        <LogOut className="w-4 h-4" />
+        {loggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+      </button>
     </div>
   )
 }

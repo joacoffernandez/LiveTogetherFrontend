@@ -22,7 +22,7 @@ export default function HomeTab() {
   const router = useRouter()
 
   const { user, loading: userLoading } = useUserContext();
-  const { family, familyUser, loading } = useFamilyContext();
+  const { family, familyUser } = useFamilyContext();
   
   const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
   const [progressLoading, setProgressLoading] = useState(false);
@@ -60,7 +60,7 @@ export default function HomeTab() {
     : 0;
 
 
-  if ( userLoading || progressLoading || loading ) return <LoadingScreen></LoadingScreen>
+  if ( userLoading || progressLoading ) return <LoadingScreen></LoadingScreen>
 
   return (
     <div className="p-6 space-y-6 pb-24">

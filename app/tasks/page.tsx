@@ -38,4 +38,4 @@ export default function TasksPage() {
         <BottomNavigation></BottomNavigation>
     </div>
   );
-}
+  }
