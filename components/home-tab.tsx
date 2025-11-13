@@ -11,6 +11,9 @@ import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import { Button } from "./ui/button"
 import { useRouter } from "next/navigation"
+import TaskItem from "./task-item"
+import { useFamilyTasks } from "@/hooks/useFamilyTasks"
+import TasksTab from "./tasks-tab"
 
 interface DailyProgress {
   completedTasks: number;
@@ -22,7 +25,9 @@ export default function HomeTab() {
   const router = useRouter()
 
   const { user, loading: userLoading } = useUserContext();
-  const { family, familyUser } = useFamilyContext();
+  const { family, familyUser, isAdmin } = useFamilyContext();
+
+  const { tasks, loading: taskLoading, reloadTasks } = useFamilyTasks()
   
   const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(null);
   const [progressLoading, setProgressLoading] = useState(false);
@@ -60,10 +65,11 @@ export default function HomeTab() {
     : 0;
 
 
-  if ( userLoading || progressLoading ) return <LoadingScreen></LoadingScreen>
+  if ( progressLoading || userLoading ) return <LoadingScreen />;
+
 
   return (
-    <div className="p-6 space-y-6 pb-24">
+    <div className="p-6 space-y-6 pb-5">
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
@@ -169,7 +175,7 @@ export default function HomeTab() {
               {progressLoading 
                 ? "Cargando progreso..." 
                 : dailyProgress 
-                  ? `${dailyProgress.completedTasks} de ${dailyProgress.totalTasks} tareas completadas`
+                  ? <><span className="font-semibold">{dailyProgress.completedTasks}</span> de <span className="font-semibold">{dailyProgress.totalTasks}</span> tareas completadas</>
                   : "Todos activos hoy"
               }
             </p>
@@ -185,6 +191,7 @@ export default function HomeTab() {
           </div>
           <Progress 
             value={progressLoading ? 0 : progressPercentage} 
+            color="white"
             className="h-2 bg-emerald-400" 
           />
         </div>
@@ -199,7 +206,7 @@ export default function HomeTab() {
           Crear Tarea
         </Button>
         <Button
-          /* onClick={onNavigateToCreateNote} */
+          onClick={() => {router.push('/notes/create')}} 
           className="h-12 p-4 bg-white hover:bg-white border-2 border-emerald-200 shadow-md text-white font-semibold text-black"
         >
           <FileText className="w-5 h-5 mr-2 text-emerald-700 font-bold" />
@@ -209,34 +216,13 @@ export default function HomeTab() {
 
 
       <div>
-        <h3 className="font-bold text-lg mb-3">Tus tareas de hoy</h3>
-        <div className="space-y-3">
-          <Card className="p-4 bg-white border-emerald-100 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
-                P
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-sm mb-1">Lavar los platos</h4>
-                <p className="text-xs text-muted-foreground">Asignado por Pedro • Quedan 2 horas</p>
-              </div>
-              <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
-            </div>
-          </Card>
-
-          <Card className="p-4 bg-white border-emerald-100 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-sm font-semibold text-purple-600">
-                L
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-sm mb-1">Sacar la basura</h4>
-                <p className="text-xs text-muted-foreground">Asignado por Laura • Falta 1 día</p>
-              </div>
-              <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
-            </div>
-          </Card>
-        </div>
+          <TasksTab
+          tasks={tasks}
+          reloadTasks={reloadTasks}
+          onNavigateToCalendar={() => router.push('tasks/calendar')}
+          onNavigateToCreateTask={() => router.push('tasks/create')}
+          isWidget={true}
+          />
       </div>
     </div>
   )

@@ -11,7 +11,6 @@ interface FamilyData {
   selected: boolean;
 }
 
-// Tipo para los miembros de la familia
 interface FamilyMember {
   idFamilyUser: string;
   idUser: string;
@@ -22,19 +21,21 @@ interface FamilyMember {
     lastName: string;
     username: string;
   };
+  completedTasks: number; 
 }
 
 interface FamilyContextType {
   family: FamilyData | null;
   families: FamilyData[];
-  familyMembers: FamilyMember[]; // ← NUEVO: miembros de la familia
+  familyMembers: FamilyMember[];
   isAdmin: boolean;
   familyUser: FamilyMember | null;
   loading: boolean;
-  membersLoading: boolean; // ← NUEVO: loading específico para miembros
+  membersLoading: boolean;
   selectFamily: (familyId: string) => void;
   reloadFamilies: () => Promise<void>;
-  reloadFamilyMembers: () => Promise<void>; // ← NUEVO: función para recargar miembros
+  reloadFamilyMembers: () => Promise<void>;
+  reloadFamilyContext: () => Promise<void>; // ← NUEVA función
 }
 
 const FamilyContext = createContext<FamilyContextType>({
@@ -48,8 +49,8 @@ const FamilyContext = createContext<FamilyContextType>({
   selectFamily: () => {},
   reloadFamilies: async () => {},
   reloadFamilyMembers: async () => {},
+  reloadFamilyContext: async () => {}, // ← NUEVA función
 });
-
 
 export const useFamilyContext = () => useContext(FamilyContext);
 
@@ -94,17 +95,13 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
     }
   };
 
-  const loadFamilies = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
+  // NUEVA FUNCIÓN: Recarga completa del contexto
+  const reloadFamilyContext = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
-      
       const res = await api.get('/family/checkfamilies');
-      console.log(res.data)
       
       if (res.success && res.data.families) {
         const userFamilies: FamilyData[] = res.data.families;
@@ -118,11 +115,53 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
           
           if (storedFamily) {
             setFamily(storedFamily);
-
             await loadFamilyMembers(storedFamily.idFamily);
-            console.log("✅ Familia verificada y cargada:", storedFamily);
           } else {
-            console.warn("Familia guardada no válida, seleccionando primera disponible");
+            selectFirstFamily(familiesWithSelection);
+          }
+        } else {
+          selectFirstFamily(familiesWithSelection);
+        }
+      } else {
+        setFamilies([]);
+        setFamily(null);
+        setFamilyMembers([]);
+      }
+    } catch (err) {
+      console.error("Error recargando contexto de familia:", err);
+      setFamilies([]);
+      setFamily(null);
+      setFamilyMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFamilies = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const res = await api.get('/family/checkfamilies');
+      
+      if (res.success && res.data.families) {
+        const userFamilies: FamilyData[] = res.data.families;
+        const storedFamilyId = localStorage.getItem("idFamily");
+        
+        const familiesWithSelection = updateFamiliesSelection(userFamilies, storedFamilyId);
+        setFamilies(familiesWithSelection);
+        
+        if (storedFamilyId) {
+          const storedFamily = familiesWithSelection.find(f => f.idFamily === storedFamilyId);
+          
+          if (storedFamily) {
+            setFamily(storedFamily);
+            await loadFamilyMembers(storedFamily.idFamily);
+          } else {
             selectFirstFamily(familiesWithSelection);
           }
         } else {
@@ -166,17 +205,14 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
       localStorage.setItem("idFamily", idFamily);
 
       await loadFamilyMembers(idFamily);
-
-      console.log("🏠 Familia seleccionada:", selectedFamily.name);
     }
   };
 
-  // refresh 
   const reloadFamilies = async () => {
     await loadFamilies();
   };
 
-  // cargar cuando inicie una pagina 
+  // Cargar cuando cambie el usuario
   useEffect(() => {
     if (user) {
       loadFamilies();
@@ -189,7 +225,6 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
   }, [user]);
 
   const isAdmin = family?.role === "Admin";
-
   const familyUser = familyMembers.find((member) => member.idUser == user?.idUser) || null;
 
   return (
@@ -205,6 +240,7 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
         selectFamily,
         reloadFamilies,
         reloadFamilyMembers,
+        reloadFamilyContext,
       }}
     >
       {children}

@@ -13,7 +13,7 @@ interface User {
 interface UserContextType {
   user: User | null;
   loading: boolean;
-  login: (userData: User, authToken: string) => void;
+  login: (userData: User) => void;
   logout: () => void;
 }
 
@@ -43,8 +43,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         } catch (error) {
           //console.error('Error verificando token:', error);
           logout();
+        } finally {
+          setLoading(false);
         }
-      setLoading(false);
     };
 
     checkAuth();
@@ -55,7 +56,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
     localStorage.removeItem('familyId');
     setUser(null);
   };

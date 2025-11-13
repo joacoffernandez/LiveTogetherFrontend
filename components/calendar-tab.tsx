@@ -1,11 +1,10 @@
 "use client"
 
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { api } from "@/lib/api"
-import { useFamilyContext } from "@/contexts/familyContext"
+import { useRouter } from "next/navigation"
 
 interface Task {
   idTask: number
@@ -35,8 +34,9 @@ export default function CalendarTab( {tasks: hookTasks, reloadTasks} : TaskHook)
   const currentYear = now.getFullYear()
   const currentDay = now.getDate()
 
-  const { family } = useFamilyContext()
   const [tasks] = useState<Task[]>(hookTasks || []);
+
+  const router = useRouter()
 
   const monthNames = [
     "Enero",
@@ -85,6 +85,9 @@ export default function CalendarTab( {tasks: hookTasks, reloadTasks} : TaskHook)
     <div className="p-6 space-y-4 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-10 w-10">
+            <ArrowLeft className="w-8 h-8" />
+          </Button>
         <h2 className="text-2xl font-bold">Calendario</h2>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousMonth}>

@@ -5,20 +5,24 @@ import HomeTab from "@/components/home-tab"
 import BottomNavigation from "@/components/bottom-navigation"
 import PageHeader from "@/components/header"
 import { useFamilyContext } from "@/contexts/familyContext"
-import { Users, Mail } from "lucide-react"
+import { Users, Mail, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import LoadingScreen from "@/components/loading"
+import { useState } from "react"
+import CreateFamilyModal from "@/components/create-family-popup"
 
 export default function LiveTogetherApp() {
   const { family, loading } = useFamilyContext()
   const router = useRouter()
 
+  const [showCreateFamilyModal, setShowCreateFamilyModal] = useState(false)
+
   if (loading) return <LoadingScreen></LoadingScreen>
 
   if (!family) return (
     <div className="w-full min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-6 max-w-[430px] mx-auto">
-      <div className="flex flex-col items-center text-center space-y-8">
+      <div className="flex flex-col items-center justify-center text-center space-y-8">
         {/* Decorative illustration */}
         <div className="relative">
           <div className="w-32 h-32 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-lg">
@@ -30,22 +34,34 @@ export default function LiveTogetherApp() {
         </div>
 
         {/* Main message */}
-        <div className="space-y-3">
+        <div className="space-y-3 w-full flex flex-col items-center justify-center">
           <h1 className="text-3xl font-bold text-gray-900">No tienes ninguna familia</h1>
           <p className="text-sm text-gray-600 max-w-xs">
             Revisa tus invitaciones pendientes para unirte a una familia o crea una nueva
           </p>
         </div>
 
-        {/* Action button */}
-        <Button
-          onClick={() => router.push("/invitations")}
-          size="lg"
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-6 text-lg rounded-xl shadow-lg"
-        >
-          <Mail className="w-5 h-5 mr-2" />
-          Ver Invitaciones
-        </Button>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Button
+            onClick={() => setShowCreateFamilyModal(true)}
+            size="lg"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-6 text-lg rounded-xl shadow-lg w-full"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Crear Familia
+          </Button>
+
+          <Button
+            onClick={() => router.push("/invitations")}
+            size="lg"
+            variant="outline"
+            className="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-6 text-lg rounded-xl w-full"
+          >
+            <Mail className="w-5 h-5 mr-2" />
+            Ver Invitaciones
+          </Button>
+        </div>
+
 
         {/* Decorative dots */}
         <div className="flex gap-2 pt-4">
@@ -54,6 +70,13 @@ export default function LiveTogetherApp() {
           <div className="w-2 h-2 rounded-full bg-emerald-300" />
         </div>
       </div>
+
+      <BottomNavigation></BottomNavigation>
+
+      <CreateFamilyModal
+        isOpen={showCreateFamilyModal}
+        onClose={() => setShowCreateFamilyModal(false)}
+      />
     </div>
   )
 

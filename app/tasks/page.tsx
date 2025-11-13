@@ -32,6 +32,7 @@ export default function TasksPage() {
             reloadTasks={reloadTasks}
             onNavigateToCalendar={() => router.push('tasks/calendar')}
             onNavigateToCreateTask={() => router.push('tasks/create')}
+            isWidget={false}
             />
         </div>
 

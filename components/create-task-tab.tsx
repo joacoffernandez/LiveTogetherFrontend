@@ -42,6 +42,14 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
         return
       }
 
+      // Validar que la fecha no sea anterior a hoy
+      const selectedDate = new Date(dueDate)
+      const now = new Date()
+      if (selectedDate <= now) {
+        setError("La fecha límite debe ser posterior a la fecha y hora actual")
+        return
+      }
+
       // Mapear dificultad de string a número según tu enum del backend
       const difficultyMap: { [key: string]: number } = {
         "facil": 1,
@@ -56,16 +64,18 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
         return
       }
 
-      // Preparar datos para la API
+      // 🔹 CORRECCIÓN: Enviar la fecha en formato ISO sin forzar UTC
+      // El input datetime-local ya está en la zona horaria local del usuario
       const taskData = {
         name: title.trim(),
         description: description.trim(),
         familyId: family.idFamily,
         difficulty: difficultyNumber,
-        deadline: new Date(dueDate).toISOString() // Convertir a formato ISO
+        deadline: dueDate // Esto ya incluye la zona horaria offset
       }
 
       console.log("Enviando tarea:", taskData)
+      console.log("Fecha enviada:", taskData.deadline)
 
       // 🔹 Hacer la petición POST usando tu API
       const result = await api.post('/task/create', taskData)
@@ -97,23 +107,13 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
     }
   }
 
-  const getDifficultyPoints = (diff: string) => {
-    switch (diff) {
-      case "facil":
-        return 10
-      case "medio":
-        return 20
-      case "dificil":
-        return 30
-      default:
-        return 0
-    }
-  }
+  // Función para establecer la fecha mínima como la fecha y hora actual
+  const getMinDateTime = () => {
+    const now = new Date();
 
-  // Validar que la fecha no sea en el pasado
-  const getMinDate = () => {
-    const today = new Date()
-    return today.toISOString().split('T')[0]
+    const timezoneOffset = now.getTimezoneOffset() * 60000;
+    const localTime = new Date(now.getTime() - timezoneOffset);
+    return localTime.toISOString().slice(0, 16);
   }
 
   return (
@@ -196,31 +196,23 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
               </SelectContent>
             </Select>
           </label>
-          {difficulty && (
-            <div className="mt-3 p-3 bg-emerald-50 rounded-lg">
-              <p className="text-sm text-emerald-700">
-                Esta tarea otorgará <span className="font-bold">{getDifficultyPoints(difficulty)} puntos</span> al
-                completarse
-              </p>
-            </div>
-          )}
         </Card>
 
         <Card className="p-4 bg-white border-emerald-100">
-          <label className="block mb-2">
+          <label className="block">
             <span className="text-sm font-semibold text-foreground">Fecha límite</span>
             <Input
-              type="date"
+              type="datetime-local"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+              min={getMinDateTime()}
               className="mt-1 border-emerald-200"
               required
-              min={getMinDate()}
               disabled={isSubmitting}
             />
           </label>
           <p className="text-xs text-gray-500 mt-1">
-            La fecha no puede ser anterior a hoy
+            La fecha no puede ser anterior a la fecha y hora actual
           </p>
         </Card>
 
@@ -239,12 +231,6 @@ export default function CreateTaskTab({ onBack }: CreateTaskTabProps) {
           )}
         </Button>
       </form>
-
-      {/* Información de depuración (opcional) */}
-      <div className="text-xs text-gray-500 p-4 bg-gray-50 rounded-lg">
-        <p>Familia seleccionada: {family?.name || "Ninguna"}</p>
-        <p>ID Familia: {family?.idFamily || "No disponible"}</p>
-      </div>
     </div>
   )
 }

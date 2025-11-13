@@ -4,11 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import FamilySwitcher from "./family-switcher";
+import { useFamilyContext } from "@/contexts/familyContext";
 
 export default function BottomNavigation() {
   const pathname = usePathname();
   const [showFamilySwitcher, setShowFamilySwitcher] = useState(false);
   const newInvitationsCount = 1;
+  const { family } = useFamilyContext();
+
+  const NoTieneFamilia = family == null;
 
   const isActive = (path: string) => {
     return (pathname === path) || (pathname.startsWith(path));
@@ -30,9 +34,14 @@ export default function BottomNavigation() {
           </Link>
 
           <Link
-            href="/tasks"
+            href={NoTieneFamilia ? "#" : "/tasks"}
+            onClick={NoTieneFamilia ? (e) => e.preventDefault() : undefined}
             className={`flex flex-col items-center gap-1 transition-colors ${
-              isActive('/tasks') ? "text-emerald-600" : "text-gray-700"
+              NoTieneFamilia
+                ? "text-gray-400 pointer-events-none cursor-not-allowed"
+                : isActive('/tasks')
+                  ? "text-emerald-600"
+                  : "text-gray-700"
             }`}
           >
             <CheckSquare className="w-6 h-6" />
@@ -50,14 +59,20 @@ export default function BottomNavigation() {
           </button>
 
           <Link
-            href="/notes"
+            href={NoTieneFamilia ? "#" : "/notes"}
+            onClick={NoTieneFamilia ? (e) => e.preventDefault() : undefined}
             className={`flex flex-col items-center gap-1 transition-colors ${
-              isActive('/notes') ? "text-emerald-600" : "text-gray-700"
+              NoTieneFamilia
+                ? "text-gray-400 pointer-events-none cursor-not-allowed"
+                : isActive('/notes')
+                  ? "text-emerald-600"
+                  : "text-gray-700"
             }`}
           >
             <FileText className="w-6 h-6" />
             <span className="text-xs font-medium">Notas</span>
           </Link>
+
 
           <Link
             href="/profile"

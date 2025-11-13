@@ -41,7 +41,7 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
-      login(data.user.username, data.user.firstName); 
+      login(data.user); 
 
       if (response.ok) {
         router.push('/');

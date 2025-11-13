@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Mail, Check, X, Users } from "lucide-react"
+import { Mail, Check, X, Users, ArrowLeft } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { api } from '@/lib/api'
+import { useRouter } from 'next/navigation'
+import { useFamilyContext } from '@/contexts/familyContext'
 
 interface Family {
   name: string;
@@ -27,6 +29,9 @@ export default function InvitationsTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [processingIds, setProcessingIds] = useState<string[]>([])
+
+  const { reloadFamilyContext } = useFamilyContext()
+  const router = useRouter()
 
   // Cargar invitaciones al montar el componente
   useEffect(() => {
@@ -60,6 +65,8 @@ export default function InvitationsTab() {
       if (result.success) {
         // Remover la invitación aceptada de la lista
         setInvitations(prev => prev.filter(inv => inv.idInvitation !== invitationId))
+        reloadFamilyContext()
+        router.refresh();
       } else {
         setError('Error al aceptar la invitación')
       }
@@ -94,7 +101,12 @@ export default function InvitationsTab() {
     return (
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Invitaciones</h2>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-10 w-10">
+              <ArrowLeft className="w-8 h-8" />
+            </Button>
+            <h2 className="text-2xl font-bold">Invitaciones</h2>
+          </div>
           <Badge variant="secondary" className="bg-gray-100 text-gray-700">
             Cargando...
           </Badge>
@@ -109,7 +121,12 @@ export default function InvitationsTab() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Invitaciones</h2>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-10 w-10">
+              <ArrowLeft className="w-8 h-8" />
+            </Button>
+            <h2 className="text-2xl font-bold">Invitaciones</h2>
+          </div>
         <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
           {invitations.length} pendientes
         </Badge>

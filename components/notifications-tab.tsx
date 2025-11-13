@@ -1,10 +1,13 @@
 "use client"
 
-import { CheckCircle2, UserPlus, Trophy, Calendar } from "lucide-react"
+import { CheckCircle2, UserPlus, Trophy, Calendar, ArrowLeft } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "./ui/button"
+import { useRouter } from "next/navigation"
 
 export default function NotificationsTab() {
+  const router = useRouter()
   const notifications = [
     {
       id: 1,
@@ -56,7 +59,12 @@ export default function NotificationsTab() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Notificaciones</h2>
+        <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8">
+              <ArrowLeft className="w-8 h-8" />
+            </Button>
+          <h2 className="text-2xl font-bold">Notificaciones</h2>
+        </div> 
         <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
           {notifications.filter((n) => !n.read).length} nuevas
         </Badge>
