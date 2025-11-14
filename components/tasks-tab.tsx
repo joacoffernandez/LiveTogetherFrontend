@@ -61,7 +61,7 @@ export default function TasksTab({
   const { family, isAdmin, familyMembers, reloadFamilyMembers, membersLoading } = useFamilyContext(); 
 
   const [tasks, setTasks] = useState<Task[]>(hookTasks || []);
-  const { user } = useUserContext();
+  const { user, loading: userLoading } = useUserContext();
 
   const handleTaskAction = async (taskId: number) => {
     const previousTasks = [...tasks];
@@ -145,6 +145,8 @@ export default function TasksTab({
     }
   })
 
+  if (userLoading || !user || !reloadTasks) return <LoadingScreen/>
+
   if (isWidget) {
     return (
       <div className="space-y-4">
@@ -163,6 +165,9 @@ export default function TasksTab({
                 key={task.idTask}
                 task={task}
                 isAdmin={isAdmin}
+                familyMembers={familyMembers}
+                user={user}
+                reloadTasks={reloadTasks}
                 currentUser={user}
                 onTaskAction={handleTaskAction}
                 onReviewApproval={handleReviewApproval}
@@ -273,6 +278,9 @@ export default function TasksTab({
             key={task.idTask}
             task={task}
             isAdmin={isAdmin}
+            familyMembers={familyMembers}
+            user={user}
+            reloadTasks={reloadTasks}
             currentUser={user}
             onTaskAction={handleTaskAction}
             onReviewApproval={handleReviewApproval}

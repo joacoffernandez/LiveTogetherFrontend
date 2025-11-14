@@ -1,77 +1,95 @@
-    "use client";
+"use client";
 
-    import { createContext, useContext, useEffect, useState } from "react";
-    import WebSocketService from "@/services/webSocketService";
-    import { useUserContext } from "./userContext";
-    import { useFamilyContext } from "./familyContext";
+import { createContext, useContext, useEffect, useState, useRef } from "react"; // Añadimos useRef
+import WebSocketService from "@/services/webSocketService";
+import { useUserContext } from "./userContext";
+import { useFamilyContext } from "./familyContext";
 
-    interface WebSocketContextType {
-    toastMessage: string | null;
-    closeToast: () => void;
+interface WebSocketContextType {
+  toastMessage: string | null;
+  closeToast: () => void;
+}
+
+const WebSocketContext = createContext<WebSocketContextType>({
+  toastMessage: null,
+  closeToast: () => {},
+});
+
+export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
+  const { token } = useUserContext();
+  const { family, incrementFamilyUnseen } = useFamilyContext();
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null); // Referencia para el timeout
+
+  const closeToast = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setToastMessage(null);
+  };
+
+  // 👉 Función para mostrar notificación visual
+  const triggerToast = (msg: string) => {
+    // Limpiamos cualquier timeout anterior
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
 
-    const WebSocketContext = createContext<WebSocketContextType>({
-    toastMessage: null,
-    closeToast: () => {},
-    });
+    setToastMessage(msg);
 
-    export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
-    const { token } = useUserContext();
-    const { family, incrementFamilyUnseen } = useFamilyContext();
+    // Configuramos nuevo timeout y guardamos la referencia
+    timeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+      timeoutRef.current = null;
+    }, 7000); // 7 segundos
+  };
 
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (!token) return;
 
-    const closeToast = () => setToastMessage(null);
+    const socket = WebSocketService.connect(token);
 
-    // 👉 Función para mostrar notificación visual
-    const triggerToast = (msg: string) => {
-        setToastMessage(msg);
+    const listener = (payload: any) => {
+      if (!payload?.type) return;
 
-        setTimeout(() => {
-        setToastMessage(null);
-        }, 10000); // 10 segundos
-    };
+      switch (payload.type) {
+        case "Notification":
+          if (payload.idFamily) {
+            // aumentar unseenCount global
+            console.log("📨 Notificacion recibida");
+            incrementFamilyUnseen(payload.idFamily);
 
-    useEffect(() => {
-        if (!token) return;
-
-        const socket = WebSocketService.connect(token);
-
-        const listener = (payload: any) => {
-        if (!payload?.type) return;
-
-        switch (payload.type) {
-            case "Notification":
-            if (payload.idFamily) {
-                // aumentar unseenCount global
-                console.log("📨 Notificacion recibida");
-                incrementFamilyUnseen(payload.idFamily);
-
-                // 👉 Si esta notificación es de la familia que está viendo el usuario
-                if (family?.idFamily === payload.idFamily) {
-                triggerToast(payload.title ?? "Tienes una nueva notificación");
-                }
+            // 👉 Si esta notificación es de la familia que está viendo el usuario
+            if (family?.idFamily === payload.idFamily) {
+              triggerToast(payload.title ?? "Tienes una nueva notificación");
             }
-            break;
+          }
+          break;
 
-            case "Invitation":
-            console.log("📨 Invitación recibida");
-            break;
-        }
-        };
-
-        socket.on("notification", listener);
-
-        return () => {
-        socket.off("notification", listener);
-        };
-    }, [token, family, incrementFamilyUnseen]);
-
-    return (
-        <WebSocketContext.Provider value={{ toastMessage, closeToast }}>
-        {children}
-        </WebSocketContext.Provider>
-    );
+        case "Invitation":
+          console.log("📨 Invitación recibida");
+          break;
+      }
     };
 
-    export const useWebSocketContext = () => useContext(WebSocketContext);
+    socket.on("notification", listener);
+
+    return () => {
+      socket.off("notification", listener);
+      // Limpiamos el timeout al desmontar el componente
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [token, family, incrementFamilyUnseen]);
+
+  return (
+    <WebSocketContext.Provider value={{ toastMessage, closeToast }}>
+      {children}
+    </WebSocketContext.Provider>
+  );
+};
+
+export const useWebSocketContext = () => useContext(WebSocketContext);

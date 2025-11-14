@@ -1,7 +1,7 @@
 "use client";
 import { Users, Bell, UserPlus, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useFamilyContext } from "@/contexts/familyContext";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -12,16 +12,97 @@ export default function PageHeader() {
   const router = useRouter();
   const { family, isAdmin } = useFamilyContext();
   const { toastMessage, closeToast } = useWebSocketContext();
+  const [progress, setProgress] = useState<number>(0)
+  const [isExiting, setIsExiting] = useState(false)
+
+  // Referencias para los intervalos
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const autoCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const newNotificationsCount = family?.unseenCount ?? 0;
-
+  
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteUsername, setInviteUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Función para limpiar todos los timers
+  const clearAllTimers = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (autoCloseTimeoutRef.current) {
+      clearTimeout(autoCloseTimeoutRef.current);
+      autoCloseTimeoutRef.current = null;
+    }
+  };
+
   const goToNotifications = () => {
     router.push("/notifications");
+  };
+
+  useEffect(() => {
+    if (toastMessage) {
+      // Limpiar timers anteriores antes de empezar nuevos
+      clearAllTimers();
+      setIsExiting(false);
+      setProgress(100);
+      
+      // Animate progress bar from 100% to 0% over 6.5 seconds
+      progressIntervalRef.current = setInterval(() => {
+        setProgress((prev) => {
+          const newProgress = prev - (100 / 65); // 65 steps in 6.5 seconds (100ms intervals)
+          if (newProgress <= 0) {
+            clearAllTimers();
+            setIsExiting(true);
+            return 0;
+          }
+          return newProgress;
+        });
+      }, 100);
+
+      // Auto-close después de 6.5 segundos
+      autoCloseTimeoutRef.current = setTimeout(() => {
+        setIsExiting(true);
+      }, 6500);
+
+    } else {
+      setIsExiting(false); 
+      clearAllTimers(); // Limpiar timers cuando no hay mensaje
+    }
+
+    // Cleanup function
+    return () => {
+      clearAllTimers();
+    };
+  }, [toastMessage]);
+
+  // Efecto para manejar el cierre completo después de la animación
+  useEffect(() => {
+    if (isExiting && toastMessage) {
+      const timer = setTimeout(() => {
+        closeToast();
+        setProgress(0);
+        clearAllTimers();
+      }, 300); // Coincide con la duración de la animación de salida
+
+      return () => clearTimeout(timer);
+    }
+  }, [isExiting, toastMessage, closeToast]);
+
+  // Limpiar timers cuando el componente se desmonte
+  useEffect(() => {
+    return () => {
+      clearAllTimers();
+    };
+  }, []);
+
+  const handleToastClose = () => {
+    if (!isExiting) {
+      clearAllTimers();
+      setIsExiting(true);
+    }
   };
 
   useEffect(() => {
@@ -105,55 +186,64 @@ export default function PageHeader() {
           </button>
         </div>
       </div>
+      
 
       {/* ⬇️ TOAST (de WebSocketContext) */}
       {toastMessage && (
-        <div className="
-          relative mt-3 overflow-hidden
-          flex items-center gap-4
-          pl-5 pr-6 py-4
-          rounded-2xl
+        <div className={`
+          fixed top-4 left-1/2 transform -translate-x-1/2
+          w-[calc(100%-2rem)] max-w-md
+          overflow-hidden
+          flex flex-col
+          px-5 py-3
+          rounded-lg
           backdrop-blur-xl
-          bg-gradient-to-r from-emerald-500/90 to-emerald-600/90
+          bg-gradient-to-r from-emerald-500/95 to-emerald-600/95
           border border-emerald-300/40
-          shadow-[0_10px_40px_-15px_rgba(16,185,129,0.5)]
-          hover:shadow-[0_20px_50px_-15px_rgba(16,185,129,0.6)]
+          shadow-[0_20px_60px_-15px_rgba(16,185,129,0.6)]
+          hover:shadow-[0_25px_80px_-15px_rgba(16,185,129,0.7)]
           transition-all duration-300
-          animate-toast-slide-in
+          z-[1000]
+          ${isExiting 
+            ? 'animate-out slide-out-to-top duration-300 ease-in' 
+            : 'animate-in slide-in-from-top duration-300 ease-out'
+          }
           group
-        ">
-          {/* Barra decorativa animada */}
-          <div className="absolute left-0 top-0 h-full w-1.5 bg-white/30 rounded-l-2xl"></div>
-          <div className="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-white/60 to-transparent rounded-l-2xl animate-pulse"></div>
+        `}>
           
-          {/* Efecto de brillo */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          
-          <div className="relative z-10 shrink-0">
-            <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-inner">
-              <Bell className="w-6 h-6 text-white animate-bounce-gentle" />
+          <div className="flex items-center gap-4">
+            <div className="relative z-10 shrink-0">
+              <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-inner">
+                <Bell className="w-6 h-6 text-white animate-bounce-gentle" />
+              </div>
             </div>
-          </div>
-          
-          {/* Mensaje */}
-          <div className="flex-1 relative z-10 min-w-0">
-            <p className="text-white font-semibold text-base tracking-wide drop-shadow-lg">
-              {toastMessage}
-            </p>
+            
+            {/* Mensaje */}
+            <div className="flex-1 relative z-10 min-w-0">
+              <p className="text-white font-semibold text-base tracking-wide drop-shadow-lg">
+                {toastMessage}
+              </p>
+            </div>
+
+            {/* Botón cerrar */}
+            <button
+              onClick={handleToastClose}
+              className="relative z-10 shrink-0 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 border border-white/20"
+              aria-label="Cerrar"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
           </div>
 
-          {/* Botón cerrar */}
-          <button
-            onClick={closeToast}
-            className="relative z-10 shrink-0 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 border border-white/20"
-            aria-label="Cerrar"
-          >
-            <X className="w-4 h-4 text-white" />
-          </button>
 
-          {/* Partículas decorativas */}
-          <div className="absolute top-2 right-12 w-2 h-2 bg-white/30 rounded-full animate-ping"></div>
-          <div className="absolute bottom-3 right-20 w-1 h-1 bg-white/40 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-0 right-0 w-full">
+          <div className="h-1 bg-gray-200 dark:bg-gray-700">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-100 ease-linear"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
         </div>
       )}
 
