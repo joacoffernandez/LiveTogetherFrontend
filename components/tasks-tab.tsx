@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Calendar, Plus } from "lucide-react"
+import { Calendar, Plus, Sparkles } from 'lucide-react'
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -57,6 +57,7 @@ export default function TasksTab({
 
   const [activeFilter, setActiveFilter] = useState<TaskFilter>("assigned")
   const [selectedUser, setSelectedUser] = useState<string>("all")
+  const [autoAssignLoading, setAutoAssignLoading] = useState(false)
 
   const { family, isAdmin, familyMembers, reloadFamilyMembers, membersLoading } = useFamilyContext(); 
 
@@ -119,6 +120,32 @@ export default function TasksTab({
     }
   };
 
+  const handleAutoAssign = async () => {
+    if (!family?.idFamily) {
+      console.error("No family ID available");
+      return;
+    }
+
+    try {
+      setAutoAssignLoading(true);
+      const response = await api.post(`/task/automaticallyAsign/${family.idFamily}`);
+      
+      if (response.success) {
+        console.log("Tareas asignadas automáticamente");
+        // Reload tasks if reloadTasks function is provided
+        if (reloadTasks) {
+          reloadTasks();
+        }
+      } else {
+        console.error("Error al asignar automáticamente:", response.error);
+      }
+    } catch (error) {
+      console.error("Error al asignar automáticamente:", error);
+    } finally {
+      setAutoAssignLoading(false);
+    }
+  };
+
   // Filtrar tareas para el modo widget - solo tareas asignadas al usuario actual
   const widgetTasks = tasks.filter(task => 
     task.assignedTo?.username === user?.username && !task.completedByUser
@@ -133,7 +160,14 @@ export default function TasksTab({
     // type filter
     switch (activeFilter) {
       case "assigned":
-        return (!isAdmin) ? task.assignedTo?.username === user?.username && !task.completedByUser : !task.completedByUser && task.assignedTo;
+        // Para usuarios normales: solo sus tareas asignadas y no completadas
+        // Para admin: tareas asignadas que no están completadas por admin (incluye en revisión)
+        if (!isAdmin) {
+          return task.assignedTo?.username === user?.username && !task.completedByUser;
+        } else {
+          // Admin ve tareas asignadas que no están completadas por admin
+          return task.assignedTo !== null && !task.completedByAdmin;
+        }
       case "unassigned":
         return !task.assignedTo
       case "review":
@@ -255,6 +289,24 @@ export default function TasksTab({
           Todas
         </Button>
       </div>
+
+      {isAdmin && activeFilter === "unassigned" && (
+        <Button
+          onClick={handleAutoAssign}
+          disabled={autoAssignLoading || filteredTasks.length === 0}
+          className="w-full h-14 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-emerald-400/30"
+        >
+          <Sparkles className="w-5 h-5 mr-2" />
+          <span>
+            {autoAssignLoading 
+              ? "Asignando automáticamente..." 
+              : filteredTasks.length === 0
+              ? "No hay tareas sin asignar"
+              : `Asignar automáticamente (${filteredTasks.length})`
+            }
+          </span>
+        </Button>
+      )}
 
       {isAdmin && !membersLoading && (
         <Select value={selectedUser} onValueChange={setSelectedUser}>
