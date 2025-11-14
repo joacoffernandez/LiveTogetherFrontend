@@ -34,7 +34,7 @@ interface Notification {
 
 export default function NotificationsTab() {
   const router = useRouter()
-  const { family } = useFamilyContext()
+  const { family, reloadFamilyContext } = useFamilyContext()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -130,6 +130,7 @@ export default function NotificationsTab() {
     }
 
     loadNotifications()
+    reloadFamilyContext()
   }, [family?.idFamily])
 
   const handleViewTask = (idTask: string) => {
