@@ -7,8 +7,9 @@ interface FamilyData {
   idFamily: string;
   name: string;
   role: string;
-  members: number; 
+  members: number;
   selected: boolean;
+  unseenCount: number; 
 }
 
 interface FamilyMember {
@@ -21,7 +22,7 @@ interface FamilyMember {
     lastName: string;
     username: string;
   };
-  completedTasks: number; 
+  completedTasks: number;
 }
 
 interface FamilyContextType {
@@ -35,7 +36,8 @@ interface FamilyContextType {
   selectFamily: (familyId: string) => void;
   reloadFamilies: () => Promise<void>;
   reloadFamilyMembers: () => Promise<void>;
-  reloadFamilyContext: () => Promise<void>; // ← NUEVA función
+  reloadFamilyContext: () => Promise<void>;
+  incrementFamilyUnseen: (familyId: string) => void;
 }
 
 const FamilyContext = createContext<FamilyContextType>({
@@ -43,13 +45,14 @@ const FamilyContext = createContext<FamilyContextType>({
   families: [],
   familyMembers: [],
   isAdmin: false,
-  familyUser: null, 
+  familyUser: null,
   loading: true,
   membersLoading: false,
   selectFamily: () => {},
   reloadFamilies: async () => {},
   reloadFamilyMembers: async () => {},
-  reloadFamilyContext: async () => {}, // ← NUEVA función
+  reloadFamilyContext: async () => {},
+  incrementFamilyUnseen: () => {},
 });
 
 export const useFamilyContext = () => useContext(FamilyContext);
@@ -62,20 +65,48 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
   const [membersLoading, setMembersLoading] = useState(false);
   const { user } = useUserContext();
 
-  const updateFamiliesSelection = (families: FamilyData[], selectedFamilyId: string | null): FamilyData[] => {
-    return families.map(fam => ({
+  const updateFamiliesSelection = (
+    families: FamilyData[],
+    selectedFamilyId: string | null
+  ): FamilyData[] => {
+    return families.map((fam) => ({
       ...fam,
-      selected: fam.idFamily === selectedFamilyId
+      selected: fam.idFamily === selectedFamilyId,
     }));
+  };
+
+  // 🔥 NUEVO FORMATO: unseenNotification
+  const loadUnseenCounts = async (): Promise<Record<string, number>> => {
+    try {
+      const res = await api.get("/notification/getUnseenCount");
+
+      if (res.success && res.data.unseenCount) {
+        const map: Record<string, number> = {};
+
+        res.data.unseenCount.forEach(
+          (item: { idFamily: string; unseenNotifications: number }) => {
+            console.log("Unseen for family", item.idFamily, ":", item.unseenNotifications);
+            map[item.idFamily] = item.unseenNotifications ?? 0;
+          }
+        );
+
+        return map;
+      }
+
+      return {};
+    } catch (err) {
+      console.error("Error cargando unseen notifications:", err);
+      return {};
+    }
   };
 
   const loadFamilyMembers = async (familyId: string) => {
     if (!familyId) return;
-    
+
     try {
       setMembersLoading(true);
       const res = await api.get(`/family/rankings/${familyId}`);
-      
+
       if (res.success && res.data) {
         setFamilyMembers(res.data.rankings);
       } else {
@@ -95,32 +126,60 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
     }
   };
 
-  // NUEVA FUNCIÓN: Recarga completa del contexto
+  // 🔥 Incremento local de unseen
+  const incrementFamilyUnseen = (familyId: string) => {
+    setFamilies((prev) =>
+      prev.map((f) =>
+        f.idFamily === familyId
+          ? { ...f, unseenCount: f.unseenCount + 1 }
+          : f
+      )
+    );
+
+    setFamily((prev) =>
+      prev && prev.idFamily === familyId
+        ? { ...prev, unseenCount: prev.unseenCount + 1 }
+        : prev
+    );
+  };
+
   const reloadFamilyContext = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
-      const res = await api.get('/family/checkfamilies');
-      
+
+      const res = await api.get("/family/checkfamilies");
       if (res.success && res.data.families) {
-        const userFamilies: FamilyData[] = res.data.families;
+        const unseenMap = await loadUnseenCounts();
+
+        const userFamilies: FamilyData[] = res.data.families.map((f: any) => ({
+          ...f,
+          unseenCount: unseenMap[f.idFamily] || 0,
+        }));
+
         const storedFamilyId = localStorage.getItem("idFamily");
-        
-        const familiesWithSelection = updateFamiliesSelection(userFamilies, storedFamilyId);
+
+        const familiesWithSelection = updateFamiliesSelection(
+          userFamilies,
+          storedFamilyId
+        );
+
         setFamilies(familiesWithSelection);
-        
+
         if (storedFamilyId) {
-          const storedFamily = familiesWithSelection.find(f => f.idFamily === storedFamilyId);
-          
+          const storedFamily = familiesWithSelection.find(
+            (f) => f.idFamily === storedFamilyId
+          );
+
           if (storedFamily) {
             setFamily(storedFamily);
             await loadFamilyMembers(storedFamily.idFamily);
           } else {
-            selectFirstFamily(familiesWithSelection);
+            await selectFirstFamily(familiesWithSelection);
           }
         } else {
-          selectFirstFamily(familiesWithSelection);
+          await selectFirstFamily(familiesWithSelection);
         }
       } else {
         setFamilies([]);
@@ -145,27 +204,38 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
 
     try {
       setLoading(true);
-      
-      const res = await api.get('/family/checkfamilies');
-      
+
+      const res = await api.get("/family/checkfamilies");
+
       if (res.success && res.data.families) {
-        const userFamilies: FamilyData[] = res.data.families;
+        const unseenMap = await loadUnseenCounts();
+
+        const userFamilies: FamilyData[] = res.data.families.map((f: any) => ({
+          ...f,
+          unseenCount: unseenMap[f.idFamily] || 0,
+        }));
+
         const storedFamilyId = localStorage.getItem("idFamily");
-        
-        const familiesWithSelection = updateFamiliesSelection(userFamilies, storedFamilyId);
+
+        const familiesWithSelection = updateFamiliesSelection(
+          userFamilies,
+          storedFamilyId
+        );
         setFamilies(familiesWithSelection);
-        
+
         if (storedFamilyId) {
-          const storedFamily = familiesWithSelection.find(f => f.idFamily === storedFamilyId);
-          
+          const storedFamily = familiesWithSelection.find(
+            (f) => f.idFamily === storedFamilyId
+          );
+
           if (storedFamily) {
             setFamily(storedFamily);
             await loadFamilyMembers(storedFamily.idFamily);
           } else {
-            selectFirstFamily(familiesWithSelection);
+            await selectFirstFamily(familiesWithSelection);
           }
         } else {
-          selectFirstFamily(familiesWithSelection);
+          await selectFirstFamily(familiesWithSelection);
         }
       } else {
         setFamilies([]);
@@ -186,18 +256,21 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
     if (userFamilies.length > 0) {
       const firstFamily = userFamilies[0];
 
-      const updatedFamilies = updateFamiliesSelection(userFamilies, firstFamily.idFamily);
+      const updatedFamilies = updateFamiliesSelection(
+        userFamilies,
+        firstFamily.idFamily
+      );
       setFamilies(updatedFamilies);
       setFamily(firstFamily);
       localStorage.setItem("idFamily", firstFamily.idFamily);
-      
+
       await loadFamilyMembers(firstFamily.idFamily);
     }
   };
 
   const selectFamily = async (idFamily: string) => {
-    const selectedFamily = families.find(f => f.idFamily === idFamily);
-    
+    const selectedFamily = families.find((f) => f.idFamily === idFamily);
+
     if (selectedFamily) {
       const updatedFamilies = updateFamiliesSelection(families, idFamily);
       setFamilies(updatedFamilies);
@@ -212,7 +285,6 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
     await loadFamilies();
   };
 
-  // Cargar cuando cambie el usuario
   useEffect(() => {
     if (user) {
       loadFamilies();
@@ -225,25 +297,27 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
   }, [user]);
 
   const isAdmin = family?.role === "Admin";
-  const familyUser = familyMembers.find((member) => member.idUser == user?.idUser) || null;
+  const familyUser =
+    familyMembers.find((m) => m.idUser == user?.idUser) || null;
 
   return (
     <FamilyContext.Provider
       value={{
         family,
         families,
-        familyMembers, 
+        familyMembers,
         isAdmin,
         familyUser,
         loading,
-        membersLoading, 
+        membersLoading,
         selectFamily,
         reloadFamilies,
         reloadFamilyMembers,
         reloadFamilyContext,
+        incrementFamilyUnseen,
       }}
     >
       {children}
     </FamilyContext.Provider>
   );
-};
+}

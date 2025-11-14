@@ -58,7 +58,7 @@ export default function SignupPage() {
 
         if (loginResult.success) {
           // Actualizar contexto de usuario
-          login(loginResult.data.user.username, loginResult.data.user.firstName);
+          login(loginResult.data.user, loginResult.data.token);
           // Redirigir a la página principal
           router.push('/');
         } else {

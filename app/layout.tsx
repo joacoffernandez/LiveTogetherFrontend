@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { UserProvider } from '../contexts/userContext'
 import FamilyProvider from '../contexts/familyContext'
+import { WebSocketProvider } from '../contexts/webSocketContext'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -21,11 +22,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <UserProvider>
           <FamilyProvider>
-            {children}
-            <Analytics />
+            <WebSocketProvider>
+              {children}
+              <Analytics />
+            </WebSocketProvider>
           </FamilyProvider>
         </UserProvider>
       </body>
