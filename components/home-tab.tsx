@@ -21,7 +21,7 @@ interface DailyProgress {
 }
 
 export default function HomeTab() {
-  const weekStreak = 7
+  const weekStreak = 0
   const router = useRouter()
 
   const { user, loading: userLoading } = useUserContext();

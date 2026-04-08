@@ -28,6 +28,15 @@ class WebSocketService {
         return this.socket;
     }
 
+    static disconnect() {
+        if (!this.socket) return;
+
+        this.socket.disconnect();
+        this.socket = null;
+
+        console.log("WS desconectado manualmente");
+    }
+
     static getSocket(): Socket | null {
         return this.socket;
     }

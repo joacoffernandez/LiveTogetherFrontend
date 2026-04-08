@@ -37,7 +37,7 @@ export default function FamilySwitcher({
       document.body.style.overflow = 'hidden' // desactivar scroll
     } else {
       setIsVisible(false)
-      setTimeout(() => setShouldRender(false), 300) // tiempo para que complete la animacion antes de desaparecer 
+      setTimeout(() => setShouldRender(false), 5000) // tiempo para que complete la animacion antes de desaparecer 
       document.body.style.overflow = 'unset'
     }
 

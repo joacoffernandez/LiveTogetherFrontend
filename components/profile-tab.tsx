@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Trophy, Star, Award, TrendingUp, LogOut, Crown, Medal } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -6,10 +6,11 @@ import { useUserContext } from "@/contexts/userContext"
 import { useFamilyContext } from "@/contexts/familyContext"
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import WebSocketService from '@/services/webSocketService'
 
 export default function ProfileTab() {
   const { user, loading: userLoading, logout } = useUserContext()
-  const { familyMembers } = useFamilyContext()
+  const { familyMembers, reloadFamilyContext } = useFamilyContext()
   const router = useRouter()
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -26,6 +27,7 @@ export default function ProfileTab() {
       const result = await api.get('/user/signout')
       
       if (result.success) {
+        WebSocketService.disconnect()
         logout()
         router.push('/login')
       } else {
@@ -79,6 +81,10 @@ export default function ProfileTab() {
     }
   }
 
+  useEffect(() => {
+    reloadFamilyContext()
+  }, [])
+
   return (
     <div className="p-6 space-y-6">
       {/* Profile Header */}
@@ -101,11 +107,11 @@ export default function ProfileTab() {
             <div className="flex justify-between text-sm mb-2">
               <span className="text-muted-foreground">Tareas completadas</span>
               <span className="font-semibold">
-                {userStats.completedTasks > 0 ? Math.round((userStats.completedTasks / (userStats.completedTasks + 5)) * 100) : 0}%
+                {userStats.completedTasks > 0 ? Math.round((userStats.completedTasks / (userStats.completedTasks)) * 100) : 0}%
               </span>
             </div>
             <Progress 
-              value={userStats.completedTasks > 0 ? Math.round((userStats.completedTasks / (userStats.completedTasks + 5)) * 100) : 0} 
+              value={userStats.completedTasks > 0 ? Math.round((userStats.completedTasks / (userStats.completedTasks)) * 100) : 0} 
               color="emerald-500"
               className="h-2 bg-emerald-200" 
             />

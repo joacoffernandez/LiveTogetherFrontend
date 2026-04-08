@@ -75,7 +75,7 @@ export default function FamilyProvider({ children }: { children: React.ReactNode
     }));
   };
 
-  // 🔥 NUEVO FORMATO: unseenNotification
+  // unseenNotification
   const loadUnseenCounts = async (): Promise<Record<string, number>> => {
     try {
       const res = await api.get("/notification/getUnseenCount");

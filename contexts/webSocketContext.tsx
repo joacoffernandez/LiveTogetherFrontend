@@ -17,7 +17,7 @@ const WebSocketContext = createContext<WebSocketContextType>({
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const { token } = useUserContext();
-  const { family, incrementFamilyUnseen } = useFamilyContext();
+  const { family, incrementFamilyUnseen, reloadFamilyContext } = useFamilyContext();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null); // Referencia para el timeout
@@ -59,7 +59,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
           if (payload.idFamily) {
             // aumentar unseenCount global
             console.log("📨 Notificacion recibida");
-            incrementFamilyUnseen(payload.idFamily);
+            reloadFamilyContext();
 
             // 👉 Si esta notificación es de la familia que está viendo el usuario
             if (family?.idFamily === payload.idFamily) {
@@ -70,6 +70,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
         case "Invitation":
           console.log("📨 Invitación recibida");
+          triggerToast(`Nueva invitación de ${payload.familyName}`);
           break;
       }
     };

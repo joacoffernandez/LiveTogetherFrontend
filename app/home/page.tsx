@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation"
 import LoadingScreen from "@/components/loading"
 import { useState } from "react"
 import CreateFamilyModal from "@/components/create-family-popup"
+import ToastMessage from "@/components/toast-message"
+
 
 export default function LiveTogetherApp() {
   const { family, loading } = useFamilyContext()
@@ -21,7 +23,9 @@ export default function LiveTogetherApp() {
   if (loading) return <LoadingScreen></LoadingScreen>
 
   if (!family) return (
+
     <div className="w-full min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-6 max-w-[430px] mx-auto">
+      {/* <ToastMessage></ToastMessage> */}
       <div className="flex flex-col items-center justify-center text-center space-y-8">
         {/* Decorative illustration */}
         <div className="relative">

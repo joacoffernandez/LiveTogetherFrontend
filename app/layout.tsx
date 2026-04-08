@@ -5,6 +5,7 @@ import './globals.css'
 import { UserProvider } from '../contexts/userContext'
 import FamilyProvider from '../contexts/familyContext'
 import { WebSocketProvider } from '../contexts/webSocketContext'
+import ToastMessage from '@/components/toast-message'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -26,6 +27,7 @@ export default function RootLayout({
         <UserProvider>
           <FamilyProvider>
             <WebSocketProvider>
+              <ToastMessage />
               {children}
               <Analytics />
             </WebSocketProvider>
